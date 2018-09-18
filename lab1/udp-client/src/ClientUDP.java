@@ -44,28 +44,29 @@ public class ClientUDP {
      */
     public void listen() {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter an OP code: ");
-        while(scanner.hasNext() && scanner.nextLine().length() > 0) {
-            try {
-                byte opcode = scanner.nextByte();
-                Operation operation = Operation.find(opcode);
-                short[] operands = new short[operation.getRequiredParams()];
-                if(operation != null) {
-                    for(int param = 1; param <= operation.getRequiredParams(); param++) {
-                        System.out.println("Enter Operand #" + param);
-                        operands[param - 1] = scanner.nextShort();
-                    }
-                    long startTime = System.currentTimeMillis();
-                    Response response = this.sendRequest(new Request(operation.getType(), operands));
-                    this.printResponse(response);
-                    long endTime = System.currentTimeMillis();
-                    long timeTaken = endTime - startTime;
-                    System.out.println("Time taken for request: " + timeTaken + " milliseconds.");
-                } else
-                    System.out.println("Invalid OP code. Use (0-6).");
-                System.out.println("Enter an OP code: ");
-            } catch (Exception e) {
-                System.out.println("Please use integers for opcode and operands.");
+        System.out.print("Enter an OP code: ");
+        while(true) {
+            if(scanner.hasNext()) {
+                try {
+                    byte opcode = scanner.nextByte();
+                    Operation operation = Operation.find(opcode);
+                    short[] operands = new short[operation.getRequiredParams()];
+                    if (operation != null) {
+                        for (int param = 1; param <= operation.getRequiredParams(); param++) {
+                            System.out.print("Enter Operand #" + param + ": ");
+                            operands[param - 1] = scanner.nextShort();
+                        }
+                        long startTime = System.currentTimeMillis();
+                        Response response = this.sendRequest(new Request(operation.getType(), operands));
+                        this.printResponse(response);
+                        long endTime = System.currentTimeMillis();
+                        long timeTaken = endTime - startTime;
+                        System.out.println("Time taken for request: " + timeTaken + " milliseconds.");
+                    } else
+                        System.out.println("Invalid OP code. Use (0-6).");
+                } catch (Exception e) {
+                    System.out.println("Please use integers for opcode and operands.");
+                }
             }
         }
     }
