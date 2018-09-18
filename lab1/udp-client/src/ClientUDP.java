@@ -311,8 +311,8 @@ public class ClientUDP {
          * @return
          */
         public int readWord() {
-            return (buffer[pointer++] << 24) + (buffer[pointer++] << 16)
-                        + (buffer[pointer++] << 8) + (buffer[pointer++]);
+            return ((buffer[pointer++] & 255) << 24) + ((buffer[pointer++] & 255) << 16)
+                        + ((buffer[pointer++] & 255) << 8) + (buffer[pointer++] & 255);
         }
     }
 
