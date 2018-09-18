@@ -28,6 +28,65 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+int readWord(char * buffer, int * position)
+{
+    int x1 = buffer[*position]<< 24 & 255;
+    * position = *position + 1;
+    int x2 = buffer[*position]<<16 & 255;
+    *position = *position + 1;
+    int x3 = buffer[*position]<<8 & 255;
+    *position = *position + 1;
+    int x4 = buffer[*position] & 255;
+    *position = *position + 1;
+    int x = x1 + x2 + x3 + x4;
+    return x;
+}
+
+int readShort(char * buffer, int * position)
+{
+    int x1 = buffer[*position]<< 8 & 255;
+    * position = *position + 1;
+    int x2 = buffer[*position] & 255;
+    *position = *position + 1;
+    int x = x1 + x2;
+    return x;
+}
+
+int readByte(char * buffer, int * position)
+{
+    int x = buffer[*position] & 255;
+    * position = *position + 1;
+    return x;
+}
+
+void *putWord(char * buffer, int value, int * position)
+{
+    buffer[*position] = (char) value >> 24;
+    * position = *position + 1;
+    buffer[*position] = (char) value >> 16;
+    * position = *position + 1;
+    buffer[*position] = (char) value >> 8;
+    * position = *position + 1;
+    buffer[*position] = (char) value;
+    * position = *position + 1;
+    return 0;
+}
+void *putShort(char * buffer, int value, int * position)
+{
+    buffer[*position] = (char) value >> 8;
+    * position = *position + 1;
+    buffer[*position] = (char) value;
+    * position = *position + 1;
+    return 0;
+}
+void *putByte(char * buffer, int value, int * position)
+{
+    buffer[*position] = (char) value >> 8;
+    * position = *position + 1;
+    return 0;
+}
+
+
 int main(int argc, char *argv[])
 {
     int sockfd, numbytes;
@@ -36,7 +95,7 @@ int main(int argc, char *argv[])
     int rv;
     char s[INET6_ADDRSTRLEN];
     
-    if (argc != 2) {
+    if (argc != 3) {
         fprintf(stderr,"usage: client hostname\n");
         exit(1);
     }
@@ -45,10 +104,23 @@ int main(int argc, char *argv[])
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     
-    if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(argv[2], PORT, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
+    
+    
+    // Read input
+    int opcode;
+    int op1;
+    int op2;
+    printf("Enter opcode: ");
+    opcode = getchar();
+    printf("Enter first operand: ");
+    op1 = getchar();
+    printf("Enter second operand: ");
+    op2 = getchar();
+    
     
     // loop through all the results and connect to the first we can
     for(p = servinfo; p != NULL; p = p->ai_next) {
@@ -78,10 +150,31 @@ int main(int argc, char *argv[])
     
     freeaddrinfo(servinfo); // all done with this structure
     
+    
+    
+    
+    
+    
+    
+    
+
+    char buffer[MAXDATASIZE];
+//    int *position = 0;
+//    putShort(buffer, strlen(argv[3]), position);
+//    putShort(buffer, argv[4], &position);
+    
+    if ((numbytes = sendto(sockfd, buffer, strlen(argv[3]), 0,
+                           p->ai_addr, p->ai_addrlen)) == -1) {
+        perror("talker: sendto");
+        exit(1);
+    }
+    
     if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
         perror("recv");
         exit(1);
     }
+    
+    
     
     buf[numbytes] = '\0';
     
