@@ -163,7 +163,7 @@ int main(void)
         if (number_of_ops > 1) {
             op2 = readShort(buffer, &position);
         }
-        
+
         printf("TML: %d \nRequestId: %d \n opcode: %d \n number of ops: %d \n op1: %d \n op2: %d",
                total_message_length,
                request_id,
