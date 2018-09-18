@@ -81,7 +81,7 @@ void *putShort(char * buffer, int value, int * position)
 }
 void *putByte(char * buffer, int value, int * position)
 {
-    buffer[*position] = (char) value >> 8;
+    buffer[*position] = (char) value;
     * position = *position + 1;
     return 0;
 }
@@ -158,7 +158,7 @@ int main(void)
         int request_id = readByte(buffer, &position);
         int op = readByte(buffer, &position);
         int number_of_ops = readByte(buffer, &position);
-        int op1 = readByte(buffer, &position);
+        int op1 = readShort(buffer, &position);
         int op2 = 0;
         if (number_of_ops > 1) {
             op2 = readShort(buffer, &position);
@@ -198,8 +198,8 @@ int main(void)
             default:
                 break;
         }
-
-        char *result_buffer[100];
+        printf("\nResult: %d", result);
+        char *result_buffer[MAXBUFLEN];
 
         int *result_position = 0;
         putByte(result_buffer, total_message_length, &result_position); // put Total Message Length
