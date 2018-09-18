@@ -102,6 +102,7 @@ public class ClientUDP {
             if (receivedResponse) {*/
             System.out.println("Received: " + new String(receivePacket.getData()));
             Buffer received = new Buffer(receivePacket.getData());
+            byte tml = received.read();
             byte requestID = received.read();
             byte error = received.read();
             int result = received.readWord();

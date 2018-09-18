@@ -152,7 +152,7 @@ int main(void)
         printf("listener: packet contains \"%s\"\n", buffer);
         
         
-        
+
         int *position = 0;
         int total_message_length = readByte(buffer, &position);
         int request_id = readByte(buffer, &position);
