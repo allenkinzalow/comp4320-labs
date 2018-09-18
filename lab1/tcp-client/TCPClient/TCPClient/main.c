@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <time.h>
 
 #include <arpa/inet.h>
 
@@ -62,12 +63,16 @@ int readByte(char * buffer, int * position)
 void *putWord(char * buffer, int value, int * position)
 {
     buffer[*position] = (char) value >> 24;
+    printf("%s", &buffer[*position]);
     * position = *position + 1;
     buffer[*position] = (char) value >> 16;
+    printf("%s", &buffer[*position]);
     * position = *position + 1;
     buffer[*position] = (char) value >> 8;
+    printf("%s", &buffer[*position]);
     * position = *position + 1;
     buffer[*position] = (char) value;
+    printf("%s", &buffer[*position]);
     * position = *position + 1;
     return 0;
 }
@@ -114,12 +119,17 @@ int main(int argc, char *argv[])
     int opcode;
     int op1;
     int op2;
+    int numberOfOps = 1;
     printf("Enter opcode: ");
     opcode = getchar();
     printf("Enter first operand: ");
     op1 = getchar();
-    printf("Enter second operand: ");
-    op2 = getchar();
+    
+    if (opcode == 0 || opcode == 1) {
+        printf("Enter second operand: ");
+        op2 = getchar();
+        numberOfOps = 2;
+    }
     
     
     // loop through all the results and connect to the first we can
@@ -159,10 +169,21 @@ int main(int argc, char *argv[])
     
 
     char buffer[MAXDATASIZE];
-//    int *position = 0;
+    int *position = 0;
+    putByte(buffer, 0, &position); // TML
+    putByte(buffer, 0, &position); // requestID
+    putByte(buffer, opcode, &position); // opCode
+    putByte(buffer, numberOfOps, &position); // number of operands
+    putByte(buffer, 0, &position); // op1
+    if (numberOfOps > 1) {
+        putByte(buffer, 0, &position); // op2
+    }
+
 //    putShort(buffer, strlen(argv[3]), position);
 //    putShort(buffer, argv[4], &position);
-    
+//
+    clock_t before = clock();
+
     if ((numbytes = sendto(sockfd, buffer, strlen(argv[3]), 0,
                            p->ai_addr, p->ai_addrlen)) == -1) {
         perror("talker: sendto");
@@ -174,6 +195,9 @@ int main(int argc, char *argv[])
         exit(1);
     }
     
+    clock_t difference = clock() - before;
+    int msec = difference / CLOCKS_PER_SEC;
+    printf("Response time: %dms",difference);
     
     
     buf[numbytes] = '\0';

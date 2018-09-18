@@ -159,10 +159,18 @@ int main(void)
         int op = readByte(buffer, &position);
         int number_of_ops = readByte(buffer, &position);
         int op1 = readByte(buffer, &position);
-        int op2;
+        int op2 = 0;
         if (number_of_ops > 1) {
             op2 = readShort(buffer, &position);
         }
+        
+        printf("TML: %d \nRequestId: %d \n opcode: %d \n number of ops: %d \n op1: %d \n op2: %d",
+               total_message_length,
+               request_id,
+               op,
+               number_of_ops,
+               op1,
+               op2);
     
         int result;
         switch(op) {
