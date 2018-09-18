@@ -154,11 +154,11 @@ int main(void)
         
         
         int *position = 0;
-        int total_message_length = readShort(buffer, &position);
-        int request_id = readShort(buffer, &position);
-        int op = readShort(buffer, &position);
-        int number_of_ops = readShort(buffer, &position);
-        int op1 = readShort(buffer, &position);
+        int total_message_length = readByte(buffer, &position);
+        int request_id = readByte(buffer, &position);
+        int op = readByte(buffer, &position);
+        int number_of_ops = readByte(buffer, &position);
+        int op1 = readByte(buffer, &position);
         int op2;
         if (number_of_ops > 1) {
             op2 = readShort(buffer, &position);
@@ -194,10 +194,10 @@ int main(void)
         char *result_buffer[100];
 
         int *result_position = 0;
-        putShort(result_buffer, total_message_length, &result_position); // put Total Message Length
-        putShort(result_buffer, request_id, &result_position); // put request id
-        putShort(result_buffer, 0, &result_position); // put error code
-        putShort(result_buffer, result, &result_position); // put result
+        putByte(result_buffer, total_message_length, &result_position); // put Total Message Length
+        putByte(result_buffer, request_id, &result_position); // put request id
+        putByte(result_buffer, 0, &result_position); // put error code
+        putWord(result_buffer, result, &result_position); // put result
         
 
         // send buffer
