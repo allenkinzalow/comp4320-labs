@@ -95,20 +95,21 @@ public class ClientUDP {
                     new DatagramPacket(new byte[bytesToSend.length], bytesToSend.length);
             socket.receive(receivePacket);
 
-            int tries = 0;
+            /*int tries = 0;
             boolean receivedResponse = false;
             do {
             } while ((!receivedResponse) && (tries < MAX_TRIES));
-            if (receivedResponse) {
-                System.out.println("Received: " + new String(receivePacket.getData()));
-                Buffer received = new Buffer(receivePacket.getData());
-                byte requestID = received.read();
-                byte error = received.read();
-                int result = received.readWord();
-                return new Response(requestID, result, error);
-            }
-            else System.out.println("No response from server... Please try again.");
+            if (receivedResponse) {*/
+            System.out.println("Received: " + new String(receivePacket.getData()));
+            Buffer received = new Buffer(receivePacket.getData());
+            byte requestID = received.read();
+            byte error = received.read();
+            int result = received.readWord();
             socket.close();
+            return new Response(requestID, result, error);
+            /*}
+            else System.out.println("No response from server... Please try again.");
+            socket.close();*/
         } catch (Exception e) {
             e.printStackTrace();
         }
