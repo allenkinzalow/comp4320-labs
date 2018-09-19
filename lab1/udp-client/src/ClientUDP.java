@@ -11,7 +11,6 @@ public class ClientUDP {
 
     private static final String SERVER = "localhost";
     private static final int PORT = 10012;
-    private static final int MAX_TRIES = 3;
     private static final int TIMEOUT = 3000;
 
     public static void main(String[] args) throws IOException {
@@ -123,7 +122,7 @@ public class ClientUDP {
             System.out.println("Error code: " + response.getError() + ". Please try again.");
             return;
         }
-        System.out.println("Response for Request #" + response.getRequestID() + " is:" + response.getResult());
+        System.out.println("Response for Request #" + response.getRequestID() + " is: " + response.getResult());
     }
 
     /**
