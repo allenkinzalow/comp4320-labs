@@ -96,12 +96,13 @@ public class ClientUDP {
                     new DatagramPacket(new byte[bytesToSend.length], bytesToSend.length);
             socket.receive(receivePacket);
 
-            StringBuilder sb = new StringBuilder();
-            for (byte b : receivePacket.getData())
-                sb.append(String.format("%02X ", b));
-            System.out.println("Received: " + sb.toString());
-            Buffer received = new Buffer(receivePacket.getData());
+            byte[] receivedBytes = receivePacket.getData();
+            Buffer received = new Buffer(receivedBytes);
             byte tml = received.read();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < tml; i++)
+                sb.append(String.format("%02X ", receivedBytes[i]));
+            System.out.println("Received bytes: " + sb.toString());
             byte requestID = received.read();
             byte error = received.read();
             int result = received.readWord();
