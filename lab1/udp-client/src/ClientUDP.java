@@ -64,6 +64,7 @@ public class ClientUDP {
                         System.out.println("Time taken for request: " + timeTaken + " milliseconds.");
                     } else
                         System.out.println("Invalid OP code. Use (0-6).");
+                    System.out.print("Enter an OP code: ");
                 } catch (Exception e) {
                     System.out.println("Please use integers for opcode and operands.");
                 }
@@ -95,12 +96,10 @@ public class ClientUDP {
                     new DatagramPacket(new byte[bytesToSend.length], bytesToSend.length);
             socket.receive(receivePacket);
 
-            /*int tries = 0;
-            boolean receivedResponse = false;
-            do {
-            } while ((!receivedResponse) && (tries < MAX_TRIES));
-            if (receivedResponse) {*/
-            System.out.println("Received: " + new String(receivePacket.getData()));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : receivePacket.getData())
+                sb.append(String.format("%02X ", b));
+            System.out.println("Received: " + sb.toString());
             Buffer received = new Buffer(receivePacket.getData());
             byte tml = received.read();
             byte requestID = received.read();
@@ -108,9 +107,6 @@ public class ClientUDP {
             int result = received.readWord();
             socket.close();
             return new Response(requestID, result, error);
-            /*}
-            else System.out.println("No response from server... Please try again.");
-            socket.close();*/
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -292,7 +288,7 @@ public class ClientUDP {
          * @return
          */
         public short readShort() {
-            return (short) ((buffer[pointer++] << 8 & 255) + (buffer[pointer++] & 255));
+            return (short) (((buffer[pointer++] & 255) << 8) + (buffer[pointer++] & 255));
         }
 
         /**
