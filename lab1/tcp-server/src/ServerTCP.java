@@ -47,6 +47,7 @@ public class ServerTCP {
                 in.read(receivedBytes);
                 Request request = new Request(receivedBytes);
                 request.fromBuffer();
+                System.out.println("Incomming request: " + request.getRequestID());
 
                 /**
                 * Generate and send reponse.
