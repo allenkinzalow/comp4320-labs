@@ -160,13 +160,6 @@ int main(int argc, char *argv[])
     
     freeaddrinfo(servinfo); // all done with this structure
     
-    
-    
-    
-    
-    
-    
-    
 
     char buffer[MAXDATASIZE];
     int *position = 0;
@@ -174,14 +167,11 @@ int main(int argc, char *argv[])
     putByte(buffer, 0, &position); // requestID
     putByte(buffer, opcode, &position); // opCode
     putByte(buffer, numberOfOps, &position); // number of operands
-    putByte(buffer, 0, &position); // op1
+    putShort(buffer, 0, &position); // op1
     if (numberOfOps > 1) {
-        putByte(buffer, 0, &position); // op2
+        putShort(buffer, 0, &position); // op2
     }
 
-//    putShort(buffer, strlen(argv[3]), position);
-//    putShort(buffer, argv[4], &position);
-//
     clock_t before = clock();
 
     if ((numbytes = sendto(sockfd, buffer, strlen(argv[3]), 0,
