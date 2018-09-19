@@ -13,7 +13,7 @@ public class ServerTCP {
     private static final int BUFSIZE = 32; // Size of receive buffer
 
     public static void main(String[] args) {
-        if ((args.length < 2) || (args.length > 3)) // Test for correct # of args
+        if ((args.length < 1) || (args.length > 2)) // Test for correct # of args
             throw new IllegalArgumentException("Parameter(s): <Talker> [<Port>]");
 
         // Read in arguments.
@@ -35,6 +35,7 @@ public class ServerTCP {
     public void listen() {
         try {
             ServerSocket server = new ServerSocket(this.port);
+            System.out.println("Listening on port: " + this.port);
             byte[] receivedBytes = new byte[BUFSIZE];
             while (true) { // Run forever, accepting and servicing connections
                 Socket clntSock = server.accept(); // Get client connection
