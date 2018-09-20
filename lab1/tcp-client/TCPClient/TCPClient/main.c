@@ -94,8 +94,8 @@ void *putByte(char * buffer, int value, int * position)
 
 int main(int argc, char *argv[])
 {
-    int sockfd, numbytes;
-    char buf[MAXDATASIZE];
+    int sockfd;
+    int numbytes;
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];
@@ -105,16 +105,19 @@ int main(int argc, char *argv[])
         exit(1);
     }
     
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    
-    if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-        return 1;
-    }
-    
 
+    while(1) {
+        
+        memset(&hints, 0, sizeof hints);
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        
+        if ((rv = getaddrinfo(argv[1], PORT, &hints, &servinfo)) != 0) {
+            fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+            return 1;
+        }
+        
+        
         
         
         // loop through all the results and connect to the first we can
@@ -141,18 +144,17 @@ int main(int argc, char *argv[])
         
         inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
                   s, sizeof s);
-        printf("client: connecting to %s\n", s);
+        printf("\nclient: connecting to %s\n", s);
         
         freeaddrinfo(servinfo); // all done with this structure
-    while(1) {
-
         
         // Read input
         int opcode;
         int op1;
         int op2;
         int numberOfOps = 1;
-        printf("\nEnter opcode: ");
+        char buf[MAXDATASIZE];
+        printf("Enter opcode: ");
         scanf(" %d",&opcode);
         
         printf("Enter first operand: ");
@@ -202,8 +204,8 @@ int main(int argc, char *argv[])
         
         printf("\nResponse: ");
         int i;
-        for (i = 0; i < MAXDATASIZE; i++) {
-            char byte = ((char) buffer[i] & 255);
+        for (i = 0; i < sizeof(buf); i++) {
+            char byte = ((char) buf[i] & 255);
             printf("%hhX ", byte);
         }
         
