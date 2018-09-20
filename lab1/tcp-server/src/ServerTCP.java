@@ -213,6 +213,8 @@ public class ServerTCP {
             this.opcode = buffer.read();
             byte opcodeLength = buffer.read();
             // Operands
+
+            this.operands = new short[opcodeLength];
             for (int index = 0; index < opcodeLength; index++)
                 this.operands[index] = buffer.readShort();
         }
