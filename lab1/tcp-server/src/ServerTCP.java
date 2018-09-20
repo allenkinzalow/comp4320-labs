@@ -39,7 +39,7 @@ public class ServerTCP {
             byte[] receivedBytes = new byte[BUFSIZE];
             while (true) { // Run forever, accepting and servicing connections
                 Socket clntSock = server.accept(); // Get client connection
-
+                System.out.println("Incomming connection from: " + clntSock.getInetAddress().getHostAddress());
                 /**
                 * Receive input.
                 */
