@@ -114,96 +114,100 @@ int main(int argc, char *argv[])
         return 1;
     }
     
-    
-    // Read input
-    int opcode;
-    int op1;
-    int op2;
-    int numberOfOps = 1;
-    printf("Enter opcode: ");
-    scanf(" %d",&opcode);
-    
-    printf("Enter first operand: ");
 
-    scanf(" %d",&op1);
-
-    if (opcode == 0 || opcode == 1) {
-        printf("Enter second operand: ");
-        scanf(" %d",&op2);
-        numberOfOps = 2;
-    }
-    
-    
-    // loop through all the results and connect to the first we can
-    for(p = servinfo; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype,
-                             p->ai_protocol)) == -1) {
-            perror("client: socket");
-            continue;
+        
+        
+        // loop through all the results and connect to the first we can
+        for(p = servinfo; p != NULL; p = p->ai_next) {
+            if ((sockfd = socket(p->ai_family, p->ai_socktype,
+                                 p->ai_protocol)) == -1) {
+                perror("client: socket");
+                continue;
+            }
+            
+            if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+                close(sockfd);
+                perror("client: connect");
+                continue;
+            }
+            
+            break;
         }
         
-        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-            close(sockfd);
-            perror("client: connect");
-            continue;
+        if (p == NULL) {
+            fprintf(stderr, "client: failed to connect\n");
+            return 2;
         }
         
-        break;
-    }
-    
-    if (p == NULL) {
-        fprintf(stderr, "client: failed to connect\n");
-        return 2;
-    }
-    
-    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
-              s, sizeof s);
-    printf("client: connecting to %s\n", s);
-    
-    freeaddrinfo(servinfo); // all done with this structure
-    
+        inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
+                  s, sizeof s);
+        printf("client: connecting to %s\n", s);
+        
+        freeaddrinfo(servinfo); // all done with this structure
+    while(1) {
 
-    char buffer[MAXDATASIZE];
-    int *position = 0;
-    putByte(buffer, 4 * (numberOfOps * 2), &position); // TML
-    putByte(buffer, 10, &position); // requestID
-    putByte(buffer, opcode, &position); // opCode
-    putByte(buffer, numberOfOps, &position); // number of operands
-    putShort(buffer, op1, &position); // op1
-    if (numberOfOps > 1) {
-        putShort(buffer, op2, &position); // op2
+        
+        // Read input
+        int opcode;
+        int op1;
+        int op2;
+        int numberOfOps = 1;
+        printf("\nEnter opcode: ");
+        scanf(" %d",&opcode);
+        
+        printf("Enter first operand: ");
+        
+        scanf(" %d",&op1);
+        
+        if (opcode == 0 || opcode == 1) {
+            printf("Enter second operand: ");
+            scanf(" %d",&op2);
+            numberOfOps = 2;
+        }
+        
+        char buffer[MAXDATASIZE];
+        int *position = 0;
+        putByte(buffer, 4 * (numberOfOps * 2), &position); // TML
+        putByte(buffer, 10, &position); // requestID
+        putByte(buffer, opcode, &position); // opCode
+        putByte(buffer, numberOfOps, &position); // number of operands
+        putShort(buffer, op1, &position); // op1
+        if (numberOfOps > 1) {
+            putShort(buffer, op2, &position); // op2
+        }
+        
+        clock_t before = clock();
+        
+        if ((numbytes = sendto(sockfd, buffer, MAXDATASIZE-1, 0,
+                               p->ai_addr, p->ai_addrlen)) == -1) {
+            perror("talker: sendto");
+            exit(1);
+        }
+        
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }
+        
+        clock_t difference = clock() - before;
+        int msec = difference / CLOCKS_PER_SEC;
+        printf("Response time: %dms",difference);
+        
+        int *read_position = 0;
+        int total_message_length = readByte(buf, &read_position); // TML
+        int request_id = readByte(buf, &read_position); // Request ID
+        int error_code = readByte(buf, &read_position); // Error Code
+        int result = readWord(buf, &read_position); // Result
+        
+        printf("\nTotal Message Length: %d",total_message_length);
+        printf("\nRequest ID: %d", request_id);
+        printf("\nError Code: %d", error_code);
+        printf("\nResult: %d", result);
+        
+        
+        buf[numbytes] = '\0';
+        
     }
-
-    clock_t before = clock();
-    
-    if ((numbytes = sendto(sockfd, buffer, MAXDATASIZE-1, 0,
-                           p->ai_addr, p->ai_addrlen)) == -1) {
-        perror("talker: sendto");
-        exit(1);
-    }
-    
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
-        exit(1);
-    }
-    
-    clock_t difference = clock() - before;
-    int msec = difference / CLOCKS_PER_SEC;
-    printf("Response time: %dms",difference);
-    
-    int *read_position = 0;
-    int total_message_length = readByte(buf, &read_position); // TML
-    int request_id = readByte(buf, &read_position); // Request ID
-    int error_code = readByte(buf, &read_position); // Error Code
-    int result = readWord(buf, &read_position); // Result
-
-    printf("\nTotal Message Length: %d",total_message_length);
-    printf("\nRequest ID: %d", request_id);
-    printf("\nError Code: %d", error_code);
-    printf("\nResult: %d", result);
-    
-    
-    buf[numbytes] = '\0';
     
     
     close(sockfd);
