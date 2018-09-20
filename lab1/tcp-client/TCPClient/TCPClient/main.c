@@ -199,6 +199,13 @@ int main(int argc, char *argv[])
         int error_code = readByte(buf, &read_position); // Error Code
         int result = readWord(buf, &read_position); // Result
         
+        printf("\nResponse: ");
+        int i;
+        for (i = 0; i < MAXDATASIZE; i = i + 8) {
+            char byte = ((char) buffer[i] & 255);
+            printf("%hhX ", byte);
+        }
+        
         printf("\nTotal Message Length: %d",total_message_length);
         printf("\nRequest ID: %d", request_id);
         printf("\nError Code: %d", error_code);
