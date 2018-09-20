@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
         
         printf("\nResponse: ");
         int i;
-        for (i = 0; i < MAXDATASIZE; i = i + 8) {
+        for (i = 0; i < MAXDATASIZE; i++) {
             char byte = ((char) buffer[i] & 255);
             printf("%hhX ", byte);
         }
