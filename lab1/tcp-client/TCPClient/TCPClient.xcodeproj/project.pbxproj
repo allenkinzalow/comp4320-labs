@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4A9913E1213C7AD800277A77 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A9913E0213C7AD800277A77 /* main.c */; };
+		4A9913E1213C7AD800277A77 /* tcpclient.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A9913E0213C7AD800277A77 /* tcpclient.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +24,7 @@
 
 /* Begin PBXFileReference section */
 		4A9913DD213C7AD800277A77 /* TCPClient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TCPClient; sourceTree = BUILT_PRODUCTS_DIR; };
-		4A9913E0213C7AD800277A77 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		4A9913E0213C7AD800277A77 /* tcpclient.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = tcpclient.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +57,7 @@
 		4A9913DF213C7AD800277A77 /* TCPClient */ = {
 			isa = PBXGroup;
 			children = (
-				4A9913E0213C7AD800277A77 /* main.c */,
+				4A9913E0213C7AD800277A77 /* tcpclient.c */,
 			);
 			path = TCPClient;
 			sourceTree = "<group>";
@@ -118,7 +118,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4A9913E1213C7AD800277A77 /* main.c in Sources */,
+				4A9913E1213C7AD800277A77 /* tcpclient.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

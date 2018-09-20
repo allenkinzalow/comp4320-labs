@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4A9913CE213C7A7300277A77 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A9913CD213C7A7300277A77 /* main.c */; };
+		4A9913CE213C7A7300277A77 /* udpserver.c in Sources */ = {isa = PBXBuildFile; fileRef = 4A9913CD213C7A7300277A77 /* udpserver.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +24,7 @@
 
 /* Begin PBXFileReference section */
 		4A9913CA213C7A7300277A77 /* UDPServer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = UDPServer; sourceTree = BUILT_PRODUCTS_DIR; };
-		4A9913CD213C7A7300277A77 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		4A9913CD213C7A7300277A77 /* udpserver.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = udpserver.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +57,7 @@
 		4A9913CC213C7A7300277A77 /* UDPServer */ = {
 			isa = PBXGroup;
 			children = (
-				4A9913CD213C7A7300277A77 /* main.c */,
+				4A9913CD213C7A7300277A77 /* udpserver.c */,
 			);
 			path = UDPServer;
 			sourceTree = "<group>";
@@ -118,7 +118,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4A9913CE213C7A7300277A77 /* main.c in Sources */,
+				4A9913CE213C7A7300277A77 /* udpserver.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
