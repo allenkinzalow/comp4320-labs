@@ -182,8 +182,8 @@ public class ServerTCP {
         public void fromBuffer() throws IOException {
             Buffer buffer = new Buffer(this.bytes);
             byte totalMessageLength = buffer.read();
-            if(totalMessageLength != this.bytes.length)
-                throw new IOException("Total message length does not equal buffer size.");
+            /*if(totalMessageLength != this.bytes.length)
+                throw new IOException("Total message length does not equal buffer size.");*/
             this.requestID = buffer.read();
             this.opcode = buffer.read();
             byte opcodeLength = buffer.read();
