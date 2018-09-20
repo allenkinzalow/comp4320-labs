@@ -94,21 +94,13 @@ public class ServerTCP {
      * Representation of available operations that clients can request.
      */
     enum Operation {
-        ADD(0, "Add", 2, (short[] o) -> {
-            return o[0] + o[1];
-        }), SUBTRACT(1, "Subtract", 2, (short[] o) -> {
-            return o[0] - o[1];
-        }), OR(2, "OR", 2, (short[] o) -> {
-            return o[0] | o[1];
-        }), AND(3, "AND", 2, (short[] o) -> {
-            return o[0] & o[1];
-        }), RIGHT(4, "Right Shift", 2, (short[] o) -> {
-            return o[0] >> o[1];
-        }), LEFT(5, "Left Shift", 2, (short[] o) -> {
-            return o[0] << o[1];
-        }), NOT(6, "Not", 1, (short[] o) -> {
-            return ~o[0];
-        });
+        ADD(0, "Add", 2, (short[] o) -> o[0] + o[1]),
+        SUBTRACT(1, "Subtract", 2, (short[] o) -> o[0] - o[1]),
+        OR(2, "OR", 2, (short[] o) -> o[0] | o[1]),
+        AND(3, "AND", 2, (short[] o) -> o[0] & o[1]),
+        RIGHT(4, "Right Shift", 2, (short[] o) -> o[0] >> o[1]),
+        LEFT(5, "Left Shift", 2, (short[] o) -> o[0] << o[1]),
+        NOT(6, "Not", 1, (short[] o) -> ~o[0]);
 
         private int type;
         private String name;
