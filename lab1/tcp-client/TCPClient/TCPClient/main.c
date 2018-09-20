@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
         
         scanf(" %d",&op1);
         
-        if (opcode == 0 || opcode == 1) {
+        if (opcode != 6) {
             printf("Enter second operand: ");
             scanf(" %d",&op2);
             numberOfOps = 2;
@@ -167,8 +167,9 @@ int main(int argc, char *argv[])
         
         char buffer[MAXDATASIZE];
         int *position = 0;
+        int rid = rand() % 128;
         putByte(buffer, 4 * (numberOfOps * 2), &position); // TML
-        putByte(buffer, 10, &position); // requestID
+        putByte(buffer, rid, &position); // requestID
         putByte(buffer, opcode, &position); // opCode
         putByte(buffer, numberOfOps, &position); // number of operands
         putShort(buffer, op1, &position); // op1
