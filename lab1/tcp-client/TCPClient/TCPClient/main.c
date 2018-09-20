@@ -191,10 +191,20 @@ int main(int argc, char *argv[])
     int msec = difference / CLOCKS_PER_SEC;
     printf("Response time: %dms",difference);
     
+    int *read_position = 0;
+    int total_message_length = readByte(buf, &read_position); // TML
+    int request_id = readByte(buf, &read_position); // Request ID
+    int error_code = readByte(buf, &read_position); // Error Code
+    int result = readWord(buf, &read_position); // Result
+
+    printf("\nTotal Message Length: %d",total_message_length);
+    printf("\nRequest ID: %d", request_id);
+    printf("\nError Code: %d", error_code);
+    printf("\nResult: %d", result);
+    
     
     buf[numbytes] = '\0';
     
-    printf("\nclient: received '%s'\n",buf);
     
     close(sockfd);
     
