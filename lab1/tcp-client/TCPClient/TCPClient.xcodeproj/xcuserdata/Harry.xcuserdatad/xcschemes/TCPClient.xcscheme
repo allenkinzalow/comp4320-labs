@@ -63,11 +63,11 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "talker"
+            argument = "127.0.0.1"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "127.0.0.1"
+            argument = "10012"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -10,7 +10,7 @@ import java.net.Socket;
 public class ServerTCP {
 
     private static final int PORT = 10012;
-    private static final int BUFSIZE = 32; // Size of receive buffer
+    private static final int BUFSIZE = 100; // Size of receive buffer
 
     public static void main(String[] args) {
         if ((args.length < 1) || (args.length > 2)) // Test for correct # of args
@@ -25,6 +25,7 @@ public class ServerTCP {
     }
 
     private short port;
+
     public ServerTCP(short port) {
         this.port = port;
     }
@@ -41,8 +42,8 @@ public class ServerTCP {
                 Socket clntSock = server.accept(); // Get client connection
                 System.out.println("Incomming connection from: " + clntSock.getInetAddress().getHostAddress());
                 /**
-                * Receive input.
-                */
+                 * Receive input.
+                 */
                 InputStream in = clntSock.getInputStream();
                 in.read(receivedBytes);
                 Request request = new Request(receivedBytes);
@@ -50,8 +51,8 @@ public class ServerTCP {
                 System.out.println("Incomming request: " + request.getRequestID());
 
                 /**
-                * Generate and send reponse.
-                */
+                 * Generate and send reponse.
+                 */
                 Response response = this.processRequest(request);
                 OutputStream out = clntSock.getOutputStream();
                 byte[] outBuffer = response.getBuffer().getByteArray();
@@ -66,13 +67,14 @@ public class ServerTCP {
 
     /**
      * Process an incomming request, return a reponse.
+     * 
      * @param request
      * @return
      */
     private Response processRequest(Request request) {
         Operation operation = Operation.find(request.getOpcode());
-        if(operation != null) {
-            if(request.getOperands().length != operation.getRequiredParams())
+        if (operation != null) {
+            if (request.getOperands().length != operation.getRequiredParams())
                 return new Response(request.getRequestID(), 0, Error.INCORRECT_OPERAND_LENTH);
             int result = operation.getExecutor().execute(request.getOperands());
             return new Response(request.getRequestID(), result, Error.NONE);
@@ -84,19 +86,29 @@ public class ServerTCP {
     /**
      * Interface for arithmetic operations.
      */
-    private interface Execute { int execute(short ... operands); }
+    private interface Execute {
+        int execute(short... operands);
+    }
 
     /**
      * Representation of available operations that clients can request.
      */
     enum Operation {
-        ADD(0, "Add", 2, (short[] o) -> { return o[0]  + o[1]; }),
-        SUBTRACT(1, "Subtract", 2, (short[] o) -> { return o[0]  - o[1]; }),
-        OR(2, "OR", 2, (short[] o) -> { return o[0]  | o[1]; }),
-        AND(3, "AND", 2, (short[] o) -> { return o[0]  & o[1]; }),
-        RIGHT(4, "Right Shift", 2, (short[] o) -> { return o[0]  >> o[1]; }),
-        LEFT(5, "Left Shift", 2, (short[] o) -> { return o[0] << o[1]; }),
-        NOT(6, "Not", 1, (short[] o) -> { return ~o[0]; });
+        ADD(0, "Add", 2, (short[] o) -> {
+            return o[0] + o[1];
+        }), SUBTRACT(1, "Subtract", 2, (short[] o) -> {
+            return o[0] - o[1];
+        }), OR(2, "OR", 2, (short[] o) -> {
+            return o[0] | o[1];
+        }), AND(3, "AND", 2, (short[] o) -> {
+            return o[0] & o[1];
+        }), RIGHT(4, "Right Shift", 2, (short[] o) -> {
+            return o[0] >> o[1];
+        }), LEFT(5, "Left Shift", 2, (short[] o) -> {
+            return o[0] << o[1];
+        }), NOT(6, "Not", 1, (short[] o) -> {
+            return ~o[0];
+        });
 
         private int type;
         private String name;
@@ -118,15 +130,17 @@ public class ServerTCP {
             return name;
         }
 
-        public int getRequiredParams() { return requiredParams; }
+        public int getRequiredParams() {
+            return requiredParams;
+        }
 
         public Execute getExecutor() {
             return executor;
         }
 
         public static Operation find(int type) {
-            for(Operation op : Operation.values())
-                if(op.getType() == type)
+            for (Operation op : Operation.values())
+                if (op.getType() == type)
                     return op;
             return null;
         }
@@ -136,13 +150,12 @@ public class ServerTCP {
      * Organization for errors.
      */
     enum Error {
-        NONE(0),
-        INVALID_OPERATION(1),
-        INCORRECT_OPERAND_LENTH(2);
+        NONE(0), INVALID_OPERATION(1), INCORRECT_OPERAND_LENTH(2);
 
         private byte code;
+
         Error(int code) {
-            this.code = (byte)code;
+            this.code = (byte) code;
         }
 
         public byte getCode() {
@@ -163,32 +176,44 @@ public class ServerTCP {
             this.bytes = bytes;
         }
 
-        public byte getOpcode() { return opcode; }
-        public short[] getOperands() { return operands; }
-        public byte getRequestID() { return requestID; }
+        public byte getOpcode() {
+            return opcode;
+        }
+
+        public short[] getOperands() {
+            return operands;
+        }
+
+        public byte getRequestID() {
+            return requestID;
+        }
 
         /**
          * Generate a random value.
+         * 
          * @return
          */
         private byte generateRequestID() {
-            return (byte)(Math.random() * Byte.MAX_VALUE);
+            return (byte) (Math.random() * Byte.MAX_VALUE);
         }
 
         /**
          * Read from the buffer for the request.
+         * 
          * @return
          */
         public void fromBuffer() throws IOException {
             Buffer buffer = new Buffer(this.bytes);
             byte totalMessageLength = buffer.read();
-            /*if(totalMessageLength != this.bytes.length)
-                throw new IOException("Total message length does not equal buffer size.");*/
+            /*
+             * if(totalMessageLength != this.bytes.length) throw new
+             * IOException("Total message length does not equal buffer size.");
+             */
             this.requestID = buffer.read();
             this.opcode = buffer.read();
             byte opcodeLength = buffer.read();
             // Operands
-            for(int index = 0; index < opcodeLength; index++)
+            for (int index = 0; index < opcodeLength; index++)
                 this.operands[index] = buffer.readShort();
         }
     }
@@ -200,17 +225,28 @@ public class ServerTCP {
         private byte requestID;
         private int result;
         private Error error;
+
         public Response(byte requestID, int result, Error error) {
             this.requestID = requestID;
             this.result = result;
             this.error = error;
         }
-        public byte getRequestID() { return requestID; }
-        public int getResult() { return result; }
-        public Error getError() { return error; }
+
+        public byte getRequestID() {
+            return requestID;
+        }
+
+        public int getResult() {
+            return result;
+        }
+
+        public Error getError() {
+            return error;
+        }
 
         /**
          * Produce the buffer for this response.
+         * 
          * @return
          */
         public Buffer getBuffer() {
@@ -265,6 +301,7 @@ public class ServerTCP {
 
         /**
          * Get the byte array.
+         * 
          * @return
          */
         public byte[] getByteArray() {
@@ -273,6 +310,7 @@ public class ServerTCP {
 
         /**
          * Put a single byte
+         * 
          * @param data
          */
         public void put(int data) {
@@ -281,14 +319,16 @@ public class ServerTCP {
 
         /**
          * Read a single bit.
+         * 
          * @return
          */
         public byte read() {
-            return (byte)(buffer[pointer++] & 255);
+            return (byte) (buffer[pointer++] & 255);
         }
 
         /**
          * Write a short to the buffer.
+         * 
          * @param data
          */
         public void putShort(short data) {
@@ -298,6 +338,7 @@ public class ServerTCP {
 
         /**
          * Read a signed short from the buffer.
+         * 
          * @return
          */
         public short readShort() {
@@ -306,6 +347,7 @@ public class ServerTCP {
 
         /**
          * Write a word/integer into the buffer.
+         * 
          * @param data
          */
         public void putWord(int data) {
@@ -317,6 +359,7 @@ public class ServerTCP {
 
         /**
          * Read a word from the buffer.
+         * 
          * @return
          */
         public int readWord() {

@@ -30,13 +30,13 @@ void *get_in_addr(struct sockaddr *socket_address)
 
 int readWord(char * buffer, int * position)
 {
-    int x1 = buffer[*position]<< 24 & 255;
+    int x1 = (buffer[*position] & 255) << 24;
     * position = *position + 1;
-    int x2 = buffer[*position]<<16 & 255;
+    int x2 = (buffer[*position] & 255) << 16;
     *position = *position + 1;
-    int x3 = buffer[*position]<<8 & 255;
+    int x3 = (buffer[*position] & 255) << 8;
     *position = *position + 1;
-    int x4 = buffer[*position] & 255;
+    int x4 = (buffer[*position] & 255);
     *position = *position + 1;
     int x = x1 + x2 + x3 + x4;
     return x;
@@ -44,9 +44,9 @@ int readWord(char * buffer, int * position)
 
 int readShort(char * buffer, int * position)
 {
-    int x1 = buffer[*position]<< 8 & 255;
-    * position = *position + 1;
-    int x2 = buffer[*position] & 255;
+    int x1 = (buffer[*position] & 255) << 8;
+    *position = *position + 1;
+    int x2 = (buffer[*position] & 255);
     *position = *position + 1;
     int x = x1 + x2;
     return x;
@@ -54,7 +54,7 @@ int readShort(char * buffer, int * position)
 
 int readByte(char * buffer, int * position)
 {
-    int x = buffer[*position] & 255;
+    int x = (buffer[*position] & 255);
     * position = *position + 1;
     return x;
 }
