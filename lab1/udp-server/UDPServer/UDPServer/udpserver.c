@@ -61,19 +61,23 @@ int readByte(char * buffer, int * position)
 
 void *putWord(char * buffer, int value, int * position)
 {
-    buffer[*position] = (char) value >> 24;
+    buffer[*position] = (char) (value >> 24);
+    printf("%s", &buffer[*position]);
     * position = *position + 1;
-    buffer[*position] = (char) value >> 16;
+    buffer[*position] = (char) (value >> 16);
+    printf("%s", &buffer[*position]);
     * position = *position + 1;
-    buffer[*position] = (char) value >> 8;
+    buffer[*position] = (char) (value >> 8);
+    printf("%s", &buffer[*position]);
     * position = *position + 1;
     buffer[*position] = (char) value;
+    printf("%s", &buffer[*position]);
     * position = *position + 1;
     return 0;
 }
 void *putShort(char * buffer, int value, int * position)
 {
-    buffer[*position] = (char) value >> 8;
+    buffer[*position] = (char) (value >> 8);
     * position = *position + 1;
     buffer[*position] = (char) value;
     * position = *position + 1;

@@ -44,8 +44,8 @@ public class ClientUDP {
     public void listen() {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter an OP code: ");
-        while(true) {
-            if(scanner.hasNext()) {
+        while (true) {
+            if (scanner.hasNext()) {
                 try {
                     byte opcode = scanner.nextByte();
                     Operation operation = Operation.find(opcode);
@@ -73,11 +73,12 @@ public class ClientUDP {
 
     /**
      * Dispatch an operation request
+     * 
      * @param request
      */
     private Response sendRequest(Request request) {
         Operation operation = Operation.find(request.getOpcode());
-        if(operation == null)
+        if (operation == null)
             return null;
         try {
             DatagramSocket socket = new DatagramSocket();
@@ -87,8 +88,7 @@ public class ClientUDP {
             byte[] bytesToSend = requestBuffer.getByteArray();
 
             // Send packet
-            DatagramPacket sendPacket = new DatagramPacket(bytesToSend,
-                    bytesToSend.length, this.server, this.port);
+            DatagramPacket sendPacket = new DatagramPacket(bytesToSend, bytesToSend.length, this.server, this.port);
             socket.send(sendPacket);
 
             DatagramPacket receivePacket = // Receiving packet
@@ -115,10 +115,11 @@ public class ClientUDP {
 
     /**
      * Print the results of a server response to the user.
+     * 
      * @param response
      */
     private void printResponse(Response response) {
-        if(response.getError() > 0) {
+        if (response.getError() > 0) {
             System.out.println("Error code: " + response.getError() + ". Please try again.");
             return;
         }
@@ -129,13 +130,7 @@ public class ClientUDP {
      * A simple enum defining operations.
      */
     enum Operation {
-        ADD(0, 2),
-        SUBTRACT(1, 2),
-        OR(2, 2),
-        AND(3, 2),
-        RIGHT(4, 2),
-        LEFT(5, 2),
-        NOT(6, 1);
+        ADD(0, 2), SUBTRACT(1, 2), OR(2, 2), AND(3, 2), RIGHT(4, 2), LEFT(5, 2), NOT(6, 1);
 
         private byte type;
         private int requiredParams;
@@ -145,14 +140,17 @@ public class ClientUDP {
             this.requiredParams = requiredParams;
         }
 
-        public byte getType() { return type; }
+        public byte getType() {
+            return type;
+        }
+
         public int getRequiredParams() {
             return requiredParams;
         }
 
         public static Operation find(int type) {
-            for(Operation op : Operation.values())
-                if(op.getType() == type)
+            for (Operation op : Operation.values())
+                if (op.getType() == type)
                     return op;
             return null;
         }
@@ -161,23 +159,32 @@ public class ClientUDP {
     private class Request {
         private byte opcode;
         private short[] operands;
+
         public Request(byte opcode, short[] operands) {
             this.opcode = opcode;
             this.operands = operands;
         }
-        public byte getOpcode() { return opcode; }
-        public short[] getOperands() { return operands; }
+
+        public byte getOpcode() {
+            return opcode;
+        }
+
+        public short[] getOperands() {
+            return operands;
+        }
 
         /**
          * Generate a random value.
+         * 
          * @return
          */
         private byte generateRequestID() {
-            return (byte)(Math.random() * Byte.MAX_VALUE);
+            return (byte) (Math.random() * Byte.MAX_VALUE);
         }
 
         /**
          * Produce the buffer for this request.
+         * 
          * @return
          */
         public Buffer getBuffer() {
@@ -192,7 +199,7 @@ public class ClientUDP {
             // # of Operands
             buffer.put(this.getOperands().length);
             // Operands
-            for(short operand : this.getOperands())
+            for (short operand : this.getOperands())
                 buffer.putShort(operand);
             return buffer;
         }
@@ -205,14 +212,24 @@ public class ClientUDP {
         private byte requestID;
         private int result;
         private byte error;
+
         public Response(byte requestID, int result, byte error) {
             this.requestID = requestID;
             this.result = result;
             this.error = error;
         }
-        public byte getRequestID() { return requestID; }
-        public int getResult() { return result; }
-        public byte getError() { return error; }
+
+        public byte getRequestID() {
+            return requestID;
+        }
+
+        public int getResult() {
+            return result;
+        }
+
+        public byte getError() {
+            return error;
+        }
     }
 
     /**
@@ -252,6 +269,7 @@ public class ClientUDP {
 
         /**
          * Get the byte array.
+         * 
          * @return
          */
         public byte[] getByteArray() {
@@ -260,6 +278,7 @@ public class ClientUDP {
 
         /**
          * Put a single byte
+         * 
          * @param data
          */
         public void put(int data) {
@@ -268,14 +287,16 @@ public class ClientUDP {
 
         /**
          * Read a single bit.
+         * 
          * @return
          */
         public byte read() {
-            return (byte)(buffer[pointer++] & 255);
+            return (byte) (buffer[pointer++] & 255);
         }
 
         /**
          * Write a short to the buffer.
+         * 
          * @param data
          */
         public void putShort(short data) {
@@ -285,6 +306,7 @@ public class ClientUDP {
 
         /**
          * Read a signed short from the buffer.
+         * 
          * @return
          */
         public short readShort() {
@@ -293,6 +315,7 @@ public class ClientUDP {
 
         /**
          * Write a word/integer into the buffer.
+         * 
          * @param data
          */
         public void putWord(int data) {
@@ -304,11 +327,12 @@ public class ClientUDP {
 
         /**
          * Read a word from the buffer.
+         * 
          * @return
          */
         public int readWord() {
             return ((buffer[pointer++] & 255) << 24) + ((buffer[pointer++] & 255) << 16)
-                        + ((buffer[pointer++] & 255) << 8) + (buffer[pointer++] & 255);
+                    + ((buffer[pointer++] & 255) << 8) + (buffer[pointer++] & 255);
         }
     }
 
