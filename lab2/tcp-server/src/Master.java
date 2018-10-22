@@ -1,33 +1,43 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * Created by allen on 9/2/2018.
+ * Created by allen on 10/22/2018.
  */
-public class ServerTCP {
+public class Master {
 
-    private static final int PORT = 10012;
-    private static final int BUFSIZE = 100; // Size of receive buffer
+    private static final int GID = 12;
+    private static final int PORT = 10010 + (GID % 30) * 5;
+    private static final int BUFSIZE = 5; // Size of receive buffer
 
     public static void main(String[] args) {
-        if ((args.length < 1) || (args.length > 2)) // Test for correct # of args
-            throw new IllegalArgumentException("Parameter(s): <Talker> [<Port>]");
+        if (args.length > 1)
+            throw new IllegalArgumentException("Parameter(s): [<Port>]");
 
         // Read in arguments.
-        String client = args[0];
-        short serverPort = (args.length == 2) ? Short.parseShort(args[1]) : PORT;
+        short serverPort = (args.length == 1) ? Short.parseShort(args[0]) : PORT;
 
-        ServerTCP server = new ServerTCP(serverPort);
+        Master server = new Master(serverPort);
         server.listen();
+
     }
 
     private short port;
+    private byte nextRID;
+    private String nextSlaveIP;
 
-    public ServerTCP(short port) {
+    public Master(short port) {
         this.port = port;
+        this.nextRID = 1;
+        try {
+            this.nextSlaveIP = InetAddress.getLocalHost().getHostAddress();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -46,9 +56,9 @@ public class ServerTCP {
                  */
                 InputStream in = clntSock.getInputStream();
                 in.read(receivedBytes);
-                Request request = new Request(receivedBytes);
+                Request request = new Request(clntSock.getInetAddress().getHostAddress(), receivedBytes);
                 request.fromBuffer();
-                System.out.println("Incomming request: " + request.getRequestID());
+                System.out.println("Incomming request: " + request.getMagicNumber());
 
                 /**
                  * Generate and send reponse.
@@ -67,84 +77,22 @@ public class ServerTCP {
 
     /**
      * Process an incomming request, return a reponse.
-     * 
+     *
      * @param request
      * @return
      */
     private Response processRequest(Request request) {
-        Operation operation = Operation.find(request.getOpcode());
-        if (operation != null) {
-            if (request.getOperands().length != operation.getRequiredParams())
-                return new Response(request.getRequestID(), 0, Error.INCORRECT_OPERAND_LENTH);
-            int result = operation.getExecutor().execute(request.getOperands());
-            return new Response(request.getRequestID(), result, Error.NONE);
-        } else
-            return new Response(request.getRequestID(), 0, Error.INVALID_OPERATION);
-
-    }
-
-    /**
-     * Interface for arithmetic operations.
-     */
-    private interface Execute {
-        int execute(short... operands);
-    }
-
-    /**
-     * Representation of available operations that clients can request.
-     */
-    enum Operation {
-        ADD(0, "Add", 2, (short[] o) -> {
-            return o[0] + o[1];
-        }),
-        SUBTRACT(1, "Subtract", 2, (short[] o) -> o[0] - o[1]),
-        OR(2, "OR", 2, (short[] o) -> o[0] | o[1]),
-        AND(3, "AND", 2, (short[] o) -> o[0] & o[1]),
-        RIGHT(4, "Right Shift", 2, (short[] o) -> o[0] >> o[1]),
-        LEFT(5, "Left Shift", 2, (short[] o) -> o[0] << o[1]),
-        NOT(6, "Not", 1, (short[] o) -> ~o[0]);
-
-        private int type;
-        private String name;
-        private int requiredParams;
-        private Execute executor;
-
-        Operation(int type, String name, int requiredParams, Execute executor) {
-            this.type = type;
-            this.name = name;
-            this.requiredParams = requiredParams;
-            this.executor = executor;
-        }
-
-        public int getType() {
-            return type;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getRequiredParams() {
-            return requiredParams;
-        }
-
-        public Execute getExecutor() {
-            return executor;
-        }
-
-        public static Operation find(int type) {
-            for (Operation op : Operation.values())
-                if (op.getType() == type)
-                    return op;
-            return null;
-        }
+        Response response = new Response(request.getGID(), request.getMagicNumber(), this.nextRID, this.nextSlaveIP, Error.NONE);
+        this.nextRID++;
+        this.nextSlaveIP = request.getIpAddress();
+        return response;
     }
 
     /**
      * Organization for errors.
      */
     enum Error {
-        NONE(0), INVALID_OPERATION(1), INCORRECT_OPERAND_LENTH(2);
+        NONE(0), INVALID_BUFFER_SIZE(1), INVALID_MAGIC_NUMBER(2);
 
         private byte code;
 
@@ -161,56 +109,41 @@ public class ServerTCP {
      * Incomming request from client.
      */
     private class Request {
+        private String ipAddress;
         private byte[] bytes;
-        private byte opcode;
-        private byte requestID;
-        private short[] operands;
+        private byte GID;
+        private int magicNumber;
 
-        public Request(byte[] bytes) {
+        public Request(String ipAddress, byte[] bytes) {
+            this.ipAddress = ipAddress;
             this.bytes = bytes;
         }
 
-        public byte getOpcode() {
-            return opcode;
+        public String getIpAddress() {
+            return ipAddress;
         }
 
-        public short[] getOperands() {
-            return operands;
+        public byte getGID() {
+            return GID;
         }
 
-        public byte getRequestID() {
-            return requestID;
-        }
-
-        /**
-         * Generate a random value.
-         * 
-         * @return
-         */
-        private byte generateRequestID() {
-            return (byte) (Math.random() * Byte.MAX_VALUE);
+        public int getMagicNumber() {
+            return magicNumber;
         }
 
         /**
          * Read from the buffer for the request.
-         * 
+         *
          * @return
          */
         public void fromBuffer() throws IOException {
             Buffer buffer = new Buffer(this.bytes);
-            byte totalMessageLength = buffer.read();
             /*
              * if(totalMessageLength != this.bytes.length) throw new
              * IOException("Total message length does not equal buffer size.");
              */
-            this.requestID = buffer.read();
-            this.opcode = buffer.read();
-            byte opcodeLength = buffer.read();
-            // Operands
-
-            this.operands = new short[opcodeLength];
-            for (int index = 0; index < opcodeLength; index++)
-                this.operands[index] = buffer.readShort();
+            this.GID = buffer.read();
+            this.magicNumber = buffer.readWord();
         }
     }
 
@@ -218,22 +151,34 @@ public class ServerTCP {
      * An easy way to represent a response to the client.
      */
     private class Response {
-        private byte requestID;
-        private int result;
+        private byte GID;
+        private int magicNumber;
+        private byte assignedRID;
+        private int nextSlaveIP;
         private Error error;
 
-        public Response(byte requestID, int result, Error error) {
-            this.requestID = requestID;
-            this.result = result;
+        public Response(byte GID, int magicNumber, byte assignedRID, String ipAddress, Error error) {
+            this.GID = GID;
+            this.magicNumber = magicNumber;
+            this.assignedRID = assignedRID;
+            this.nextSlaveIP = this.ipToInteger(ipAddress);
             this.error = error;
         }
 
-        public byte getRequestID() {
-            return requestID;
+        public byte getGID() {
+            return GID;
         }
 
-        public int getResult() {
-            return result;
+        public int getMagicNumber() {
+            return magicNumber;
+        }
+
+        public byte getAssignedRID() {
+            return assignedRID;
+        }
+
+        public int getNextSlaveIP() {
+            return nextSlaveIP;
         }
 
         public Error getError() {
@@ -242,21 +187,31 @@ public class ServerTCP {
 
         /**
          * Produce the buffer for this response.
-         * 
+         *
          * @return
          */
         public Buffer getBuffer() {
-            Buffer buffer = new Buffer();
+            Buffer buffer = new Buffer(10);
 
-            // TML
-            buffer.put(6);
-            // RequestID
-            buffer.put(this.getRequestID());
-            // Error
-            buffer.put(this.getError().getCode());
-            // Result
-            buffer.putWord(this.getResult());
+            // GID - 1
+            buffer.put(this.getGID());
+            // Magic Number - 4
+            buffer.putWord(this.getMagicNumber());
+            // Assigned nextRID - 1
+            buffer.put(this.getAssignedRID());
+            // Next Slave - 4
+            buffer.putWord(this.getNextSlaveIP());
             return buffer;
+        }
+
+        private int ipToInteger(String ipAddress) {
+            int result = 0;
+            String[] parts = ipAddress.split(".");
+            for (String part: parts) {
+                int p = Integer.parseInt(part);
+                result = result << 8 | (p & 0xFF);
+            }
+            return result;
         }
     }
 
@@ -297,7 +252,7 @@ public class ServerTCP {
 
         /**
          * Get the byte array.
-         * 
+         *
          * @return
          */
         public byte[] getByteArray() {
@@ -306,7 +261,7 @@ public class ServerTCP {
 
         /**
          * Put a single byte
-         * 
+         *
          * @param data
          */
         public void put(int data) {
@@ -315,7 +270,7 @@ public class ServerTCP {
 
         /**
          * Read a single bit.
-         * 
+         *
          * @return
          */
         public byte read() {
@@ -324,7 +279,7 @@ public class ServerTCP {
 
         /**
          * Write a short to the buffer.
-         * 
+         *
          * @param data
          */
         public void putShort(short data) {
@@ -334,7 +289,7 @@ public class ServerTCP {
 
         /**
          * Read a signed short from the buffer.
-         * 
+         *
          * @return
          */
         public short readShort() {
@@ -343,7 +298,7 @@ public class ServerTCP {
 
         /**
          * Write a word/integer into the buffer.
-         * 
+         *
          * @param data
          */
         public void putWord(int data) {
@@ -355,7 +310,7 @@ public class ServerTCP {
 
         /**
          * Read a word from the buffer.
-         * 
+         *
          * @return
          */
         public int readWord() {
@@ -365,3 +320,4 @@ public class ServerTCP {
     }
 
 }
+
