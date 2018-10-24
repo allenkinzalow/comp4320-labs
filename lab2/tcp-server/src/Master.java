@@ -35,7 +35,7 @@ public class Master {
         this.nextRID = 1;
         try {
             this.nextSlaveIP = InetAddress.getLocalHost().getHostAddress();
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -82,7 +82,8 @@ public class Master {
      * @return
      */
     private Response processRequest(Request request) {
-        Response response = new Response(request.getGID(), request.getMagicNumber(), this.nextRID, this.nextSlaveIP, Error.NONE);
+        Response response = new Response(request.getGID(), request.getMagicNumber(), this.nextRID, this.nextSlaveIP,
+                Error.NONE);
         this.nextRID++;
         this.nextSlaveIP = request.getIpAddress();
         return response;
@@ -207,7 +208,7 @@ public class Master {
         private int ipToInteger(String ipAddress) {
             int result = 0;
             String[] parts = ipAddress.split(".");
-            for (String part: parts) {
+            for (String part : parts) {
                 int p = Integer.parseInt(part);
                 result = result << 8 | (p & 0xFF);
             }
@@ -320,4 +321,3 @@ public class Master {
     }
 
 }
-
