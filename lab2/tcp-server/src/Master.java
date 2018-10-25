@@ -58,12 +58,12 @@ public class Master {
                 in.read(receivedBytes);
                 Request request = new Request(clntSock.getInetAddress().getHostAddress(), receivedBytes);
                 request.fromBuffer();
-                System.out.println("Incomming request: " + request.getMagicNumber());
 
                 /**
                  * Generate and send reponse.
                  */
                 Response response = this.processRequest(request);
+                System.out.println("Assigned RID: " + response.getAssignedRID() + " -- Assigned Slave IP: " + response.getNextSlaveIPString());
                 OutputStream out = clntSock.getOutputStream();
                 byte[] outBuffer = response.getBuffer().getByteArray();
                 out.write(outBuffer, 0, outBuffer.length);
@@ -213,6 +213,15 @@ public class Master {
                 result = result << 8 | (p & 0xFF);
             }
             return result;
+        }
+
+        public String getNextSlaveIPString() {
+            String ip = "";
+            ip += ((byte)(this.nextSlaveIP >> 24)) + ".";
+            ip += ((byte)(this.nextSlaveIP >> 16)) + ".";
+            ip += ((byte)(this.nextSlaveIP >> 8)) + ".";
+            ip += ((byte)(this.nextSlaveIP)) + "";
+            return ip;
         }
     }
 
