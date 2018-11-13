@@ -62,13 +62,13 @@ class Response:
         self.dottedIP = socket.inet_ntoa(struct.pack('>L', self.nextSlaveIP))
 
     def printResponse(self):
-        print("Group ID of master: ", self.gid)
-        print("My ring ID: ", self.rid)
-        print("IP Address:  ", self.dottedIP)
+        print "Group ID of master: ", self.gid
+        print "My ring ID: ", self.rid
+        print "IP Address:  ", self.dottedIP
 
 
 if (len(sys.argv) != 3):
-    print("Error: Incorrect arguments. Use format: Slave MasterHostname MasterPort#")
+    print "Error: Incorrect arguments. Use format: Slave MasterHostname MasterPort#"
     sys.exit()
 
 hostname = sys.argv[1]
