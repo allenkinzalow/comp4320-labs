@@ -1,10 +1,10 @@
 import socket
 import sys
 import struct
+import thread
 
 
 class Buffer:
-
     def __init__(self, data=[]):
         self.position = 0
         self.buffer = bytearray(data)
@@ -42,6 +42,9 @@ class Buffer:
     def putByte(self, data):
         x = data & 0x000000ff
         self.buffer.append(x)
+        self.movePos()
+
+    def putLong(self, data):
         self.movePos()
 
     def movePos(self, amount=1):
@@ -92,3 +95,30 @@ client.send(buffer.buffer)
 response = client.recv(4096)
 resp = Response(response)
 resp.printResponse()
+
+
+def listenForMessages(threadName, delay, host, port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_address = (host, port)
+    sock.bind(server_address)
+    while True:
+        data = sock.recvfrom(4096)
+
+
+try:
+    thread.start_new_thread(listenForMessages, ("Thread-2", 4, hostname, port))
+except:
+    print "Error: unable to start thread"
+
+while (True):
+    inputRingID = raw_input("\nEnter Ring ID: ")
+    ringID = int(inputRingID)
+    message = raw_input("Message: ")
+
+    buffer = Buffer()
+    buffer.putByte(ringID)
+    buffer.putLong(message)
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_address = (hostname, port)
+    sent = sock.sendto(message, server_address)
