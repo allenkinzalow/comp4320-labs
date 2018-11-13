@@ -4,13 +4,14 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 
 /**
  * Created by allen on 10/22/2018.
  */
 public class Master {
 
-    private static final int GID = 12;
+    private static final int GID = 2;
     private static final int PORT = 10010 + (GID % 30) * 5;
     private static final int BUFSIZE = 5; // Size of receive buffer
 
@@ -35,6 +36,7 @@ public class Master {
         this.nextRID = 1;
         try {
             this.nextSlaveIP = InetAddress.getLocalHost().getHostAddress();
+            System.out.println("Master IP: " + this.nextSlaveIP);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -207,7 +209,7 @@ public class Master {
 
         private int ipToInteger(String ipAddress) {
             int result = 0;
-            String[] parts = ipAddress.split(".");
+            String[] parts = ipAddress.split("\\.");
             for (String part : parts) {
                 int p = Integer.parseInt(part);
                 result = result << 8 | (p & 0xFF);
@@ -217,10 +219,10 @@ public class Master {
 
         public String getNextSlaveIPString() {
             String ip = "";
-            ip += ((byte)(this.nextSlaveIP >> 24)) + ".";
-            ip += ((byte)(this.nextSlaveIP >> 16)) + ".";
-            ip += ((byte)(this.nextSlaveIP >> 8)) + ".";
-            ip += ((byte)(this.nextSlaveIP)) + "";
+            ip += ((byte)(this.nextSlaveIP >> 24) & 0xFF) + ".";
+            ip += ((byte)(this.nextSlaveIP >> 16) & 0xFF) + ".";
+            ip += ((byte)(this.nextSlaveIP >> 8) & 0xFF) + ".";
+            ip += ((byte)(this.nextSlaveIP) & 0xFF) + "";
             return ip;
         }
     }
