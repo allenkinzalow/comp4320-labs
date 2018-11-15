@@ -1,13 +1,16 @@
 import socket
 import sys
 import struct
+import thread
 
 
 class Buffer:
-
     def __init__(self, data=[]):
         self.position = 0
         self.buffer = bytearray(data)
+
+    def readLong(self):
+       #Put code here 
 
     def readWord(self):
         x1 = (self.buffer[self.position] & 255) << 24
@@ -44,6 +47,9 @@ class Buffer:
         self.buffer.append(x)
         self.movePos()
 
+    def putLong(self, data):
+        #self.movePos()
+
     def movePos(self, amount=1):
         self.position = self.position + amount
 
@@ -62,13 +68,29 @@ class Response:
         self.dottedIP = socket.inet_ntoa(struct.pack('>L', self.nextSlaveIP))
 
     def printResponse(self):
-        print("Group ID of master: ", self.gid)
-        print("My ring ID: ", self.rid)
-        print("IP Address:  ", self.dottedIP)
+        print "Group ID of master: ", self.gid
+        print "My ring ID: ", self.rid
+        print "IP Address:  ", self.dottedIP
+
+
+class MessageResponse:
+    def __init__(self, response):
+        self.response = response
+        self.buffer = Buffer(self.response)
+        self.readResponse()
+
+    def readResponse(self):
+        self.gid = self.buffer.readByte()
+        self.magic = self.buffer.readWord()
+        self.ttl = self.buffer.readByte()
+        self.ridDest = self.buffer.readByte()
+        self.ridSrc = self.buffer.readByte()
+        self.message = self.buffer.readLong()
+        self.checkSum = self.buffer.readByte()
 
 
 if (len(sys.argv) != 3):
-    print("Error: Incorrect arguments. Use format: Slave MasterHostname MasterPort#")
+    print "Error: Incorrect arguments. Use format: Slave MasterHostname MasterPort#"
     sys.exit()
 
 hostname = sys.argv[1]
@@ -92,3 +114,38 @@ client.send(buffer.buffer)
 response = client.recv(4096)
 resp = Response(response)
 resp.printResponse()
+
+
+def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_address = (host, port)
+    sock.bind(server_address)
+    while True:
+        response = sock.recvfrom(4096)
+        messageResponse = MessageResponse(response)
+        if (messageResponse.ridDest == myRid):
+            print messageResponse.message
+        elif (messageResponse.ttl > 1):
+            next_address = (nextSlaveIP, port)
+            sock.sendto(response, port)
+
+
+try:
+    thread.start_new_thread(
+        listenForMessages,
+        ("Thread-2", 4, hostname, port, resp.rid, resp.nextSlaveIP))
+except:
+    print "Error: unable to start thread"
+
+while (True):
+    inputRingID = raw_input("\nEnter Ring ID: ")
+    ringID = int(inputRingID)
+    message = raw_input("Message: ")
+
+    buffer = Buffer()
+    buffer.putByte(ringID)
+    buffer.putLong(message)
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_address = (hostname, port)
+    sent = sock.sendto(message, server_address)
