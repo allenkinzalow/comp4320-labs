@@ -1,10 +1,9 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.nio.ByteBuffer;
+import java.util.Scanner;
 
 /**
  * Created by allen on 10/22/2018.
@@ -13,7 +12,8 @@ public class Master {
 
     private static final int GID = 2;
     private static final int PORT = 10010 + (GID % 30) * 5;
-    private static final int BUFSIZE = 5; // Size of receive buffer
+    private static final int MAGIC = 0x4A6F7921;
+    private static final int BUFSIZE = 100; // Size of receive buffer
 
     public static void main(String[] args) {
         if (args.length > 1)
@@ -22,9 +22,16 @@ public class Master {
         // Read in arguments.
         short serverPort = (args.length == 1) ? Short.parseShort(args[0]) : PORT;
 
-        Master server = new Master(serverPort);
-        server.listen();
-
+        final Master server = new Master(serverPort);
+        Thread serverThread = new Thread(() -> {
+            server.acceptNewSlaves();
+        });
+        Thread messageThread = new Thread(() -> {
+            server.listenForMessages();
+        });
+        serverThread.start();
+        messageThread.start();
+        server.promptUserMessages();
     }
 
     private short port;
@@ -45,14 +52,14 @@ public class Master {
     /**
      * Listen for incomming clients.
      */
-    public void listen() {
+    public void acceptNewSlaves() {
         try {
             ServerSocket server = new ServerSocket(this.port);
-            System.out.println("Listening on port: " + this.port);
+            System.out.println("Listening on port TCP: " + this.port);
             byte[] receivedBytes = new byte[BUFSIZE];
             while (true) { // Run forever, accepting and servicing connections
                 Socket clntSock = server.accept(); // Get client connection
-                System.out.println("Incomming connection from: " + clntSock.getInetAddress().getHostAddress());
+                //System.out.println("Incomming connection from: " + clntSock.getInetAddress().getHostAddress());
                 /**
                  * Receive input.
                  */
@@ -65,12 +72,49 @@ public class Master {
                  * Generate and send reponse.
                  */
                 Response response = this.processRequest(request);
-                System.out.println("Assigned RID: " + response.getAssignedRID() + " -- Assigned Slave IP: " + response.getNextSlaveIPString());
+                //System.out.println("Assigned RID: " + response.getAssignedRID() + " -- Assigned Slave IP: " + response.getNextSlaveIPString());
                 OutputStream out = clntSock.getOutputStream();
                 byte[] outBuffer = response.getBuffer().getByteArray();
                 out.write(outBuffer, 0, outBuffer.length);
 
                 clntSock.close(); // Close the socket. We are done with this client!
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void listenForMessages() {
+        try {
+            DatagramSocket messageServer = new DatagramSocket(10010 + (GID * 5) + 0);
+            System.out.println("Listening on port UDP: " + this.port);
+            byte[] receivedBytes = new byte[BUFSIZE];
+            DatagramPacket packet =  new DatagramPacket(receivedBytes, BUFSIZE);
+            while(true) {
+                messageServer.receive(packet);
+                Buffer buffer = new Buffer(packet.getData());
+                Message message = new Message(buffer);
+                System.out.println(message.getMessage());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Accept messages from console.
+     */
+    public void promptUserMessages() {
+        Scanner scanner = new Scanner(System.in);
+        try {
+            while(true) {
+                System.out.println("Enter an RID: ");
+                byte RID = scanner.nextByte();
+                System.out.println("Enter a message: ");
+                String m = scanner.nextLine();
+                Message message = new Message(RID, 0, m);
+                System.out.println("Building packet: " + message.getDestRID() + " "
+                            + message.getDestRID());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -227,6 +271,61 @@ public class Master {
         }
     }
 
+    private class Message {
+        private byte messageGID;
+        private int magicNumber;
+        private short TTL = 255;
+        private byte destRID;
+        private byte srcRID;
+        private String message;
+        private byte checksum;
+
+        public Message(int destRID, int srcRID, String message) {
+            this.messageGID = GID;
+            this.magicNumber = MAGIC;
+            this.TTL = 255;
+            this.destRID = (byte)destRID;
+            this.srcRID = (byte)srcRID;
+            this.message = message;
+            this.checksum = this.computeChecksum();
+        }
+
+        /**
+         * Create a message from a byte buffer.
+         * @param buffer
+         */
+        public Message(Buffer buffer) {
+            this.fromBuffer(buffer);
+        }
+
+        public byte getDestRID() {
+            return destRID;
+        }
+
+        public byte getSrcRID() {
+            return srcRID;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        private byte computeChecksum() {
+            return 0;
+        }
+
+        private void fromBuffer(Buffer buffer) {
+            this.messageGID = buffer.read();
+            this.magicNumber = buffer.readWord();
+            this.TTL = buffer.read();
+            this.destRID = buffer.read();
+            this.srcRID = buffer.read();
+            this.message = buffer.readString();
+            this.checksum = buffer.read();
+        }
+
+    }
+
     /**
      * A buffer for reading and writing data.
      */
@@ -329,6 +428,32 @@ public class Master {
             return ((buffer[pointer++] & 255) << 24) + ((buffer[pointer++] & 255) << 16)
                     + ((buffer[pointer++] & 255) << 8) + (buffer[pointer++] & 255);
         }
+
+        /**
+         * Put the first 64 bytes of a string
+         * @param message
+         */
+        public void putString(String message) {
+            byte[] bytes = message.getBytes();
+            byte[] actual = new byte[64];
+            int capped = (bytes.length < actual.length ? bytes.length : actual.length);
+            for(int i = 0; i < capped; i++)
+                actual[i] = bytes[i];
+            for(byte b : actual)
+                buffer[pointer++] = b;
+        }
+
+        /**
+         * Read the first 64 bytes of the buffer into a string.
+         * @return
+         */
+        public String readString() {
+            byte[] actual = new byte[64];
+            for(int i = 0; i < 64; i++)
+                actual[i] = buffer[pointer++];
+            return new String(actual);
+        }
+
     }
 
 }
