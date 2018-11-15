@@ -136,7 +136,7 @@ public class Master {
     private Response processRequest(Request request) throws UnknownHostException {
         Response response = new Response(request.getGID(), request.getMagicNumber(), this.nextRID, this.nextSlaveIP,
                 Error.NONE);
-        this.nextSlavePort = 10010 + (5 * GID) + this.nextRID;
+        this.nextSlavePort = 10010 + (5 * request.getGID()) + this.nextRID;
         this.nextSlaveIP = request.getIpAddress();
         this.nextSlaveAddress = InetAddress.getByName(this.nextSlaveIP);
         this.nextRID++;
