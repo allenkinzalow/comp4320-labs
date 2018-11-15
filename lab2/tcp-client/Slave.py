@@ -5,12 +5,17 @@ import thread
 
 
 class Buffer:
-    def __init__(self, data=[]):
+    def __init__(self, data=[0] * 100):
         self.position = 0
         self.buffer = bytearray(data)
 
-    def readLong(self):
-       #Put code here 
+    def readStr(self):
+       # Put code here
+        subBuffer = bytearray()
+        for i in range(0, 63):
+            subBuffer.append(self.buffer[self.position + i])
+            self.movePos()
+        return str(subBuffer)
 
     def readWord(self):
         x1 = (self.buffer[self.position] & 255) << 24
@@ -47,8 +52,16 @@ class Buffer:
         self.buffer.append(x)
         self.movePos()
 
-    def putLong(self, data):
-        #self.movePos()
+    def putStr(self, data):
+        messageBuffer = bytearray(data)
+        actualBuffer = bytearray(64)
+        messageLength = len(messageBuffer) if len(
+            messageBuffer) <= 64 else len(actualBuffer)
+        for i in range(0, messageLength - 1):
+            actualBuffer[i] = messageBuffer[i]
+        for b in actualBuffer:
+            self.buffer[self.position] = b
+            self.movePos()
 
     def movePos(self, amount=1):
         self.position = self.position + amount
@@ -85,7 +98,7 @@ class MessageResponse:
         self.ttl = self.buffer.readByte()
         self.ridDest = self.buffer.readByte()
         self.ridSrc = self.buffer.readByte()
-        self.message = self.buffer.readLong()
+        self.message = self.buffer.readStr()
         self.checkSum = self.buffer.readByte()
 
 
@@ -114,6 +127,8 @@ client.send(buffer.buffer)
 response = client.recv(4096)
 resp = Response(response)
 resp.printResponse()
+udpPort = 10010 + 10 + resp.rid
+print udpPort
 
 
 def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
@@ -133,7 +148,7 @@ def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
 try:
     thread.start_new_thread(
         listenForMessages,
-        ("Thread-2", 4, hostname, port, resp.rid, resp.nextSlaveIP))
+        ("Thread-2", 4, hostname, udpPort, resp.rid, resp.nextSlaveIP))
 except:
     print "Error: unable to start thread"
 
@@ -144,7 +159,7 @@ while (True):
 
     buffer = Buffer()
     buffer.putByte(ringID)
-    buffer.putLong(message)
+    buffer.putStr(message)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_address = (hostname, port)
