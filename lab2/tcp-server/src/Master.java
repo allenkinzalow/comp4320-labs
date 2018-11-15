@@ -37,6 +37,8 @@ public class Master {
     private short port;
     private byte nextRID;
     private String nextSlaveIP;
+    private InetAddress nextSlaveAddress;
+    private int nextSlavePort;
 
     public Master(short port) {
         this.port = port;
@@ -94,7 +96,10 @@ public class Master {
                 messageServer.receive(packet);
                 Buffer buffer = new Buffer(packet.getData());
                 Message message = new Message(buffer);
-                System.out.println(message.getMessage());
+                if(message.getDestRID() == 0)
+                    System.out.println(message.getMessage());
+                else
+                    message.dispatch(this.nextSlaveAddress, this.nextSlavePort);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -113,8 +118,9 @@ public class Master {
                 System.out.println("Enter a message: ");
                 String m = scanner.nextLine();
                 Message message = new Message(RID, 0, m);
-                System.out.println("Building packet: " + message.getDestRID() + " "
+                System.out.println("Sending message: " + message.getDestRID() + " "
                             + message.getDestRID());
+                message.dispatch(this.nextSlaveAddress, this.nextSlavePort);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -127,11 +133,13 @@ public class Master {
      * @param request
      * @return
      */
-    private Response processRequest(Request request) {
+    private Response processRequest(Request request) throws UnknownHostException {
         Response response = new Response(request.getGID(), request.getMagicNumber(), this.nextRID, this.nextSlaveIP,
                 Error.NONE);
-        this.nextRID++;
+        this.nextSlavePort = 10010 + (5 * GID) + this.nextRID;
         this.nextSlaveIP = request.getIpAddress();
+        this.nextSlaveAddress = InetAddress.getByName(this.nextSlaveIP);
+        this.nextRID++;
         return response;
     }
 
@@ -322,6 +330,30 @@ public class Master {
             this.srcRID = buffer.read();
             this.message = buffer.readString();
             this.checksum = buffer.read();
+        }
+
+        private Buffer toBuffer() {
+            Buffer buffer = new Buffer();
+            buffer.put(this.messageGID);
+            buffer.putWord(this.magicNumber);
+            buffer.put(this.TTL);
+            buffer.put(this.destRID);
+            buffer.put(this.srcRID);
+            buffer.putString(this.message);
+            buffer.put(this.checksum);
+            return buffer;
+        }
+
+        public void dispatch(InetAddress server, int port) {
+            try {
+                Buffer buffer = this.toBuffer();
+                byte[] byteArray = buffer.getByteArray();
+                DatagramSocket socket = new DatagramSocket();
+                DatagramPacket packet = new DatagramPacket(byteArray, byteArray.length, server, port);
+                socket.send(packet);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
     }
