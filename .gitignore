@@ -4,3 +4,7 @@
 *.iml
 .class
 *.class
+.vscode
+./.vscode
+.vscode/settings.json
+.vscode/
