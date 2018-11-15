@@ -127,7 +127,7 @@ client.send(buffer.buffer)
 response = client.recv(4096)
 resp = Response(response)
 resp.printResponse()
-udpPort = 10010 + 10 + resp.rid
+udpPort = 10010 + resp.gid * 5 + resp.rid
 print udpPort
 
 
