@@ -34,7 +34,7 @@ class Buffer:
         return x
 
     def putWord(self, data):
-        x1 = data >> 24
+        x1 = (data >> 24) & 0x000000ff
         self.buffer.append(x1)
         self.movePos()
         x2 = (data >> 16) & 0x000000ff
