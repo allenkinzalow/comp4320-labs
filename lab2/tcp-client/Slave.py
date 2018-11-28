@@ -13,6 +13,7 @@ class Buffer:
         end = endIndex - self.position
         for i in range(0, end):
             subBuffer.append(self.buffer[self.position + i])
+        self.movePos(end)
         return str(subBuffer)
 
     def readWord(self):
@@ -51,18 +52,19 @@ class Buffer:
         self.movePos()
 
     def putStr(self, data):
+        if len(data) > 64:
+            data = data[:64]
         messageBuffer = bytearray(data)
-        actualBuffer = bytearray(64)
-        messageLength = len(messageBuffer) if len(
-            messageBuffer) <= 64 else len(actualBuffer)
-        for i in range(0, messageLength - 1):
-            actualBuffer[i] = messageBuffer[i]
-        for b in actualBuffer:
-            self.buffer[self.position] = b
+        for b in messageBuffer:
+            self.buffer.append(b)
             self.movePos()
 
     def movePos(self, amount=1):
         self.position = self.position + amount
+
+    def printBuffer(self):
+        for b in self.buffer:
+            print b
 
 
 class Response:
@@ -106,22 +108,23 @@ class MessageResponse:
 
     def computeChecksum(self):
         buffer = self.toBuffer()
-        header = bytearray()
-        for i in range(0,len(buffer.buffer) - 2):
-            header.append(buffer.buffer[i])
+        buffer.printBuffer()
+        header_size = len(buffer.buffer) - 1
 
         checksum = 0
-        for b in header:
-            checksum = checksum + (b & 0xFF)
+        for i,b in enumerate(buffer.buffer):
+            if i == header_size:
+                continue
+            checksum = checksum + (b & 0x000000ff)
             overflow = (checksum >> 8) & 0x000000ff
             if overflow > 0:
-                checksum &= 0xFF
+                checksum &= 0x000000ff
                 checksum = checksum + overflow
         checksum = (~checksum) & 0x000000ff
         return checksum & 0x000000ff
     
     def toBuffer(self):
-        buffer = Buffer()
+        buffer = Buffer(data=[])
         buffer.putByte(self.gid)
         buffer.putWord(self.magic)
         buffer.putByte(self.ttl)
@@ -136,17 +139,28 @@ def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
     server_address = (host, port)
     sock.bind(server_address)
     while True:
-        data, addr = sock.recvfrom(4096)
-        print "data: " + data
+        data, _ = sock.recvfrom(4096)
         messageResponse = MessageResponse(data)
-        print "Message: " + str(messageResponse.message)
-        print "Checksum: " + str(messageResponse.checkSum)
-        messageResponse.computeChecksum()
-        # if (messageResponse.ridDest == myRid):
-        #     print messageResponse.message
-        # elif (messageResponse.ttl > 1):
-        #     next_address = (nextSlaveIP, port)
-        #     sock.sendto(response, port)
+        givenChecksum = messageResponse.checkSum
+        actualChecksum = messageResponse.computeChecksum()
+        if (givenChecksum == actualChecksum):
+            if (messageResponse.ridDest == myRid):
+                print "Message: " + str(messageResponse.message)
+            else:
+                messageResponse.ttl = messageResponse.ttl - 1
+                if messageResponse.ttl < 1:
+                    # discard
+                    print "Message Discarded"
+                else:
+                    newChecksum = messageResponse.computeChecksum()
+                    next_address = (nextSlaveIP, port)
+                    newResponse = messageResponse.toBuffer()
+                    sock.sendto(newResponse, port)
+
+        else:
+            print "Error: Checksums do not match."
+            print "Received Checksum: " + givenChecksum
+            print "Computed Checksum: " + actualChecksum
 
 if (len(sys.argv) != 3):
     print "Error: Incorrect arguments. Use format: Slave MasterHostname MasterPort#"
