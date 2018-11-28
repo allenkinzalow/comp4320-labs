@@ -10,8 +10,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "0.0.0.0",
-                "10070"
+                "192.168.1.8",
+                "10020"
             ]
         },
         {
@@ -61,7 +61,11 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "console": "externalTerminal"
+            "console": "externalTerminal",
+            "args": [
+                "192.168.1.8",
+                "10020"
+            ]
         }
     ]
 }

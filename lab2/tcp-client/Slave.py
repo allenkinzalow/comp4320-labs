@@ -3,18 +3,16 @@ import sys
 import struct
 import thread
 
-
 class Buffer:
     def __init__(self, data=[0] * 100):
         self.position = 0
         self.buffer = bytearray(data)
 
-    def readStr(self):
-       # Put code here
+    def readStr(self, endIndex):
         subBuffer = bytearray()
-        for i in range(0, 63):
+        end = endIndex - self.position
+        for i in range(0, end):
             subBuffer.append(self.buffer[self.position + i])
-            self.movePos()
         return str(subBuffer)
 
     def readWord(self):
@@ -98,9 +96,54 @@ class MessageResponse:
         self.ttl = self.buffer.readByte()
         self.ridDest = self.buffer.readByte()
         self.ridSrc = self.buffer.readByte()
-        self.message = self.buffer.readStr()
+        self.message = self.buffer.readStr(self.getMessageEnd())
         self.checkSum = self.buffer.readByte()
 
+    def getMessageEnd(self):
+        header = self.buffer.buffer
+        end = len(header) - 1
+        return end
+
+    def computeChecksum(self):
+        buffer = self.toBuffer()
+        header = buffer.buffer
+        checksum = 0
+        for b in header:
+            checksum = checksum + (b & 0xFF)
+            overflow = (checksum >> 8) & 0x000000ff
+            if overflow > 0:
+                checksum &= 0xFF
+                checksum = checksum + overflow
+        checksum = (~checksum) & 0x000000ff
+        print "Computed Checksum: " + str(checksum)
+        return checksum 
+    
+    def toBuffer(self):
+        buffer = Buffer()
+        buffer.putByte(self.gid)
+        buffer.putWord(self.magic)
+        buffer.putByte(self.ttl)
+        buffer.putByte(self.ridDest)
+        buffer.putByte(self.ridSrc)
+        buffer.putStr(self.message)
+        buffer.putByte(self.checkSum)
+        return buffer
+
+def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_address = (host, port)
+    sock.bind(server_address)
+    while True:
+        data, addr = sock.recvfrom(4096)
+        messageResponse = MessageResponse(data)
+        print "Message: " + str(messageResponse.message)
+        print "Checksum: " + str(messageResponse.checkSum)
+        messageResponse.computeChecksum()
+        # if (messageResponse.ridDest == myRid):
+        #     print messageResponse.message
+        # elif (messageResponse.ttl > 1):
+        #     next_address = (nextSlaveIP, port)
+        #     sock.sendto(response, port)
 
 if (len(sys.argv) != 3):
     print "Error: Incorrect arguments. Use format: Slave MasterHostname MasterPort#"
@@ -128,22 +171,6 @@ response = client.recv(4096)
 resp = Response(response)
 resp.printResponse()
 udpPort = 10010 + resp.gid * 5 + resp.rid
-print udpPort
-
-
-def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server_address = (host, port)
-    sock.bind(server_address)
-    while True:
-        response = sock.recvfrom(4096)
-        messageResponse = MessageResponse(response)
-        if (messageResponse.ridDest == myRid):
-            print messageResponse.message
-        elif (messageResponse.ttl > 1):
-            next_address = (nextSlaveIP, port)
-            sock.sendto(response, port)
-
 
 try:
     thread.start_new_thread(
