@@ -131,66 +131,18 @@ class MessageResponse:
         buffer.putByte(self.checkSum)
         return buffer
 
-def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server_address = (host, port)
-    sock.bind(server_address)
-    while True:
-        data, addr = sock.recvfrom(4096)
-        print "data: " + data
-        messageResponse = MessageResponse(data)
-        print "Message: " + str(messageResponse.message)
-        print "Checksum: " + str(messageResponse.checkSum)
-        messageResponse.computeChecksum()
-        # if (messageResponse.ridDest == myRid):
-        #     print messageResponse.message
-        # elif (messageResponse.ttl > 1):
-        #     next_address = (nextSlaveIP, port)
-        #     sock.sendto(response, port)
 
-if (len(sys.argv) != 3):
-    print "Error: Incorrect arguments. Use format: Slave MasterHostname MasterPort#"
-    sys.exit()
+def testChecksum():
+    resp = '\x02Joy!\xff\x01\x00hello\x02'
+    messageResponse = MessageResponse(resp)
 
-hostname = sys.argv[1]
-port = int(sys.argv[2])
-groupID = 2
-magicNumber = '0x4a6f7921'
+    actualValue = messageResponse.computeChecksum()
+    expectedValue = 104
+    if (actualValue == expectedValue):
+        print "Pass"
+    else:
+        print "Fail"
+        print "Expected: " + str(expectedValue)
+        print "Actual: " + str(actualValue)
 
-buffer = Buffer()
-
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-client.connect((hostname, port))
-
-buffer.putByte(groupID)
-buffer.putWord(int(magicNumber, 16))
-
-# send request to server
-client.send(buffer.buffer)
-
-# Receive response from server
-response = client.recv(4096)
-resp = Response(response)
-resp.printResponse()
-udpPort = 10010 + resp.gid * 5 + resp.rid
-
-try:
-    thread.start_new_thread(
-        listenForMessages,
-        ("Thread-2", 4, hostname, udpPort, resp.rid, resp.nextSlaveIP))
-except:
-    print "Error: unable to start thread"
-
-while (True):
-    inputRingID = raw_input("\nEnter Ring ID: ")
-    ringID = int(inputRingID)
-    message = raw_input("Message: ")
-
-    buffer = Buffer()
-    buffer.putByte(ringID)
-    buffer.putStr(message)
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server_address = (hostname, port)
-    sent = sock.sendto(message, server_address)
+testChecksum()
