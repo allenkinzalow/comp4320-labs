@@ -15,7 +15,7 @@ public class Master {
     private static final int PORT = 10010 + (GID % 30) * 5;
     private static final int MAGIC = 0x4A6F7921;
     private static final int BUFSIZE = 100; // Size of receive buffer
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     public static void main(String[] args) {
         if (args.length > 1)
@@ -36,8 +36,8 @@ public class Master {
         });
         serverThread.start();
         messageThread.start();
-        inputThread.start();
-        //server.promptUserMessages();
+        //inputThread.start();
+        server.promptUserMessages();
 
     }
 
@@ -338,7 +338,7 @@ public class Master {
 
         private byte computeChecksum() {
             Buffer buffer = this.toBuffer();
-            byte[] header = buffer.getByteArray(buffer.getByteArray().length - 2);
+            byte[] header = buffer.getByteArray(buffer.getByteArray().length - 1);
             short checksum = 0;
             for(byte b : header) {
                 checksum += (b & 0xFF);
