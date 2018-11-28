@@ -31,10 +31,18 @@ public class Master {
         Thread messageThread = new Thread(() -> {
             server.listenForMessages();
         });
+        Thread inputThread = new Thread(() -> {
+            server.promptUserMessages();
+        });
         serverThread.start();
         messageThread.start();
-        server.promptUserMessages();
+        inputThread.start();
+        //server.promptUserMessages();
 
+    }
+
+    public static void log(String message) {
+        if(DEBUG) System.out.println(message);
     }
 
     private short port;
@@ -66,12 +74,12 @@ public class Master {
             byte[] receivedBytes = new byte[BUFSIZE];
             while (true) { // Run forever, accepting and servicing connections
                 Socket clntSock = server.accept(); // Get client connection
-                if(DEBUG)
-                    System.out.println("Incomming connection from: " + clntSock.getInetAddress().getHostAddress());
+                log("Incomming connection from: " + clntSock.getInetAddress().getHostAddress());
                 /**
                  * Receive input.
                  */
                 InputStream in = clntSock.getInputStream();
+                receivedBytes = new byte[in.available()];
                 in.read(receivedBytes);
                 Request request = new Request(clntSock.getInetAddress().getHostAddress(), receivedBytes);
                 request.fromBuffer();
@@ -80,8 +88,7 @@ public class Master {
                  * Generate and send reponse.
                  */
                 Response response = this.processRequest(request);
-                if(DEBUG)
-                    System.out.println("Assigned RID: " + response.getAssignedRID() + " -- Assigned Slave IP: " + response.getNextSlaveIPString());
+                log("Assigned RID: " + response.getAssignedRID() + " -- Assigned Slave IP: " + response.getNextSlaveIPString());
                 OutputStream out = clntSock.getOutputStream();
                 byte[] outBuffer = response.getBuffer().getByteArray();
                 out.write(outBuffer, 0, outBuffer.length);
@@ -101,11 +108,13 @@ public class Master {
             DatagramPacket packet =  new DatagramPacket(receivedBytes, BUFSIZE);
             while(true) {
                 messageServer.receive(packet);
-                Buffer buffer = new Buffer(packet.getData());
+                receivedBytes = new byte[packet.getLength()];
+                System.arraycopy(packet.getData(), packet.getOffset(), receivedBytes, 0, packet.getLength());
+                Buffer buffer = new Buffer(receivedBytes);
                 Message message = new Message(buffer);
                 if(message.verify()) {
                     if(message.getDestRID() == 0)
-                        System.out.println(message.getMessage());
+                        System.out.print(message.getMessage());
                     else
                         message.dispatch(this.nextSlaveAddress, this.nextSlavePort);
                 }
@@ -128,7 +137,7 @@ public class Master {
                 String m = scanner.next();
                 Message message = new Message(RID, 0, m);
                 System.out.println("Sending message: " + message.getDestRID() + " "
-                            + message.getDestRID());
+                        + message.getDestRID());
                 message.dispatch(this.nextSlaveAddress, this.nextSlavePort);
             }
         } catch (Exception e) {
@@ -329,30 +338,25 @@ public class Master {
 
         private byte computeChecksum() {
             Buffer buffer = this.toBuffer();
-            byte[] header = buffer.getByteArray(71);
+            byte[] header = buffer.getByteArray(buffer.getByteArray().length - 2);
             short checksum = 0;
             for(byte b : header) {
                 checksum += (b & 0xFF);
-                if(DEBUG)
-                    System.out.println(Integer.toBinaryString(checksum));
+                log(Integer.toBinaryString(checksum));
                 // calculate overflow
                 byte overflow = (byte)(checksum >> 8);
                 if(overflow > 0) {
                     // discard overflow
                     checksum &= 0xFF;
-                    if(DEBUG)
-                        System.out.println("Overflow discarded: " + Integer.toBinaryString(checksum));
+                    log("Overflow discarded: " + Integer.toBinaryString(checksum));
                     // add overflow
                     checksum += overflow;
-                    if(DEBUG)
-                        System.out.println("Overflow added: " + Integer.toBinaryString(checksum));
+                    log("Overflow added: " + Integer.toBinaryString(checksum));
                 }
             }
-            if(DEBUG)
-                System.out.println("Before complement: " + Integer.toBinaryString(checksum));
+            log("Before complement: " + Integer.toBinaryString(checksum));
             checksum = (byte)((~checksum));
-            if(DEBUG)
-                System.out.println("After complement: " + Integer.toBinaryString(checksum));
+            log("After complement: " + Integer.toBinaryString(checksum));
             return (byte)checksum;
         }
 
@@ -362,12 +366,13 @@ public class Master {
             this.TTL = (short)(buffer.read() & 0xFF);
             this.destRID = buffer.read();
             this.srcRID = buffer.read();
-            this.message = buffer.readString();
+            int messageLength = buffer.getByteArray().length - 1 - buffer.getPointer();
+            this.message = buffer.readString(messageLength);
             this.checksum = buffer.read();
         }
 
         private Buffer toBuffer() {
-            Buffer buffer = new Buffer();
+            Buffer buffer = new Buffer(9 + this.message.length());
             buffer.put(this.messageGID);
             buffer.putWord(this.magicNumber);
             buffer.put(this.TTL);
@@ -386,7 +391,7 @@ public class Master {
         public boolean verify() {
             byte computedChecksum = this.computeChecksum();
             if(computedChecksum != this.checksum) {
-                System.out.println("Computed checksum: " + computedChecksum + " did not match received checksum: " + this.checksum);
+                System.out.println("Computed checksum: " + (computedChecksum & 0xFF) + " did not match received checksum: " + (this.checksum & 0xFF));
                 return false;
             }
             this.TTL--;
@@ -460,6 +465,10 @@ public class Master {
             return Arrays.copyOfRange(this.buffer, 0, position);
         }
 
+        public int getPointer() {
+            return pointer;
+        }
+
         /**
          * Put a single byte
          *
@@ -524,12 +533,9 @@ public class Master {
          * @param message
          */
         public void putString(String message) {
-            byte[] bytes = message.getBytes();
-            byte[] actual = new byte[64];
-            int capped = (bytes.length < actual.length ? bytes.length : actual.length);
-            for(int i = 0; i < capped; i++)
-                actual[i] = bytes[i];
-            for(byte b : actual)
+            String capped = message.length() > 64 ? message.substring(0, 64) : message;
+            byte[] bytes = capped.getBytes();
+            for(byte b : bytes)
                 buffer[pointer++] = b;
         }
 
@@ -537,9 +543,9 @@ public class Master {
          * Read the first 64 bytes of the buffer into a string.
          * @return
          */
-        public String readString() {
-            byte[] actual = new byte[64];
-            for(int i = 0; i < 64; i++)
+        public String readString(int length) {
+            byte[] actual = new byte[length];
+            for(int i = 0; i < length; i++)
                 actual[i] = buffer[pointer++];
             return new String(actual);
         }
