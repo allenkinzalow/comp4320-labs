@@ -139,13 +139,16 @@ class Message:
         self.response = response
         self.destRid = destRid
         self.message = message
+        self.readResponse()
 
     def readResponse(self):
         self.gid = self.response.gid
         self.magic = self.response.magic
-        self.ttl = self.response.ttl
+        self.ttl = 255
         self.ridSrc = self.response.rid
+        self.checksum = 144
         self.checksum = self.computeChecksum()
+        #print "Calculated Checksum: " + str(self.computeChecksum())
         self.buffer = self.toBuffer()
 
     def computeChecksum(self):
@@ -191,9 +194,9 @@ def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
                 messageResponse.ttl = messageResponse.ttl - 1
                 if messageResponse.ttl < 2:
                     # discard
-                    print "Message Discarded"
+                    print "Warning: Message Discarded"
                 else:
-                    print "Forwarding"
+                    #print "Forwarding"
                     newChecksum = messageResponse.computeChecksum()
                     messageResponse.checkSum = newChecksum
                     dottedIP = socket.inet_ntoa(struct.pack('>L', nextSlaveIP))
@@ -245,9 +248,12 @@ while (True):
     inputRingID = raw_input("\nEnter Ring ID: ")
     ringID = int(inputRingID)
     message = raw_input("Message: ")
-
+    sendingMessage = Message(resp, ringID, message)
+    print "Sending Checksum: " + str(sendingMessage.checksum)
+    sendingBuffer = str(sendingMessage.buffer)
+    sendingMessage.buffer.printBuffer()
     
-
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server_address = (hostname, port)
-    # sent = sock.sendto(message, server_address)
+    dottedIP = socket.inet_ntoa(struct.pack('>L', resp.nextSlaveIP))
+    next_address = (dottedIP, udpPort - 1)
+    sent = sock.sendto(sendingBuffer, next_address)
