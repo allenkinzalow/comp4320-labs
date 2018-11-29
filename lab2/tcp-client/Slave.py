@@ -134,12 +134,12 @@ class MessageResponse:
         buffer.putByte(self.checkSum)
         return buffer
 
-def intToIP(ipnum):
-    o1 = int(ipnum / 16777216) % 256
-    o2 = int(ipnum / 65536) % 256
-    o3 = int(ipnum / 256) % 256
-    o4 = int(ipnum) % 256
-    return '%(o1)s.%(o2)s.%(o3)s.%(o4)s' % locals()
+# def intToIP(ipnum):
+#     o1 = int(ipnum / 16777216) % 256
+#     o2 = int(ipnum / 65536) % 256
+#     o3 = int(ipnum / 256) % 256
+#     o4 = int(ipnum) % 256
+#     return '%(o1)s.%(o2)s.%(o3)s.%(o4)s' % locals()
 
 def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -148,27 +148,28 @@ def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
     while True:
         data, _ = sock.recvfrom(4096)
         messageResponse = MessageResponse(data)
-        givenChecksum = messageResponse.checkSum
-        actualChecksum = messageResponse.computeChecksum()
-        if (givenChecksum == actualChecksum):
+        retrievedChecksum = messageResponse.checkSum
+        calculatedChecksum = messageResponse.computeChecksum()
+        print "TTL: " + str(messageResponse.ttl)
+        if (retrievedChecksum == calculatedChecksum):
             if (messageResponse.ridDest == myRid):
                 print "Message: " + str(messageResponse.message)
             else:
                 messageResponse.ttl = messageResponse.ttl - 1
-                if messageResponse.ttl < 1:
+                if messageResponse.ttl < 2:
                     # discard
                     print "Message Discarded"
                 else:
                     newChecksum = messageResponse.computeChecksum()
-                    next_address = (intToIP(nextSlaveIP), port)
+                    dottedIP = socket.inet_ntoa(struct.pack('>L', nextSlaveIP))
+                    next_address = (dottedIP, port)
                     newResponse = messageResponse.toBuffer()
                     forwardingBuffer = str(newResponse.buffer)
                     sock.sendto(forwardingBuffer, next_address)
-
         else:
             print "Error: Checksums do not match."
-            print "Received Checksum: " + str(givenChecksum)
-            print "Computed Checksum: " + str(actualChecksum)
+            print "Received Checksum: " + str(retrievedChecksum)
+            print "Computed Checksum: " + str(calculatedChecksum)
 
 if (len(sys.argv) != 3):
     print "Error: Incorrect arguments. Use format: Slave MasterHostname MasterPort#"

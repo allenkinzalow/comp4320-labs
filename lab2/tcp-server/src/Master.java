@@ -15,7 +15,7 @@ public class Master {
     private static final int PORT = 10010 + (GID % 30) * 5;
     private static final int MAGIC = 0x4A6F7921;
     private static final int BUFSIZE = 100; // Size of receive buffer
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public static void main(String[] args) {
         if (args.length > 1)
