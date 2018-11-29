@@ -112,10 +112,10 @@ public class Master {
                 System.arraycopy(packet.getData(), packet.getOffset(), receivedBytes, 0, packet.getLength());
                 Buffer buffer = new Buffer(receivedBytes);
                 Message message = new Message(buffer);
-                if(message.verify()) {
+                if(message.verifyChecksum()) {
                     if(message.getDestRID() == 0)
                         System.out.print(message.getMessage());
-                    else
+                    else if(message.verifyTTL())
                         message.dispatch(this.nextSlaveAddress, this.nextSlavePort);
                 }
             }
@@ -392,12 +392,16 @@ public class Master {
          * Recompute the checksum.
          * @return  Validation
          */
-        public boolean verify() {
+        public boolean verifyChecksum() {
             byte computedChecksum = this.computeChecksum();
             if(computedChecksum != this.checksum) {
                 System.out.println("Computed checksum: " + (computedChecksum & 0xFF) + " did not match received checksum: " + (this.checksum & 0xFF));
                 return false;
             }
+            return true;
+        }
+
+        public boolean verifyTTL() {
             this.TTL--;
             if(this.TTL <= 0) {
                 System.out.println("TTL reached 0, message discarded.");
