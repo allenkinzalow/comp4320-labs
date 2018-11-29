@@ -108,7 +108,7 @@ class MessageResponse:
 
     def computeChecksum(self):
         buffer = self.toBuffer()
-        buffer.printBuffer()
+        #buffer.printBuffer()
         header_size = len(buffer.buffer) - 1
 
         checksum = 0
@@ -134,6 +134,13 @@ class MessageResponse:
         buffer.putByte(self.checkSum)
         return buffer
 
+def intToIP(ipnum):
+    o1 = int(ipnum / 16777216) % 256
+    o2 = int(ipnum / 65536) % 256
+    o3 = int(ipnum / 256) % 256
+    o4 = int(ipnum) % 256
+    return '%(o1)s.%(o2)s.%(o3)s.%(o4)s' % locals()
+
 def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_address = (host, port)
@@ -153,14 +160,15 @@ def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
                     print "Message Discarded"
                 else:
                     newChecksum = messageResponse.computeChecksum()
-                    next_address = (nextSlaveIP, port)
+                    next_address = (intToIP(nextSlaveIP), port)
                     newResponse = messageResponse.toBuffer()
-                    sock.sendto(newResponse.buffer, port)
+                    forwardingBuffer = str(newResponse.buffer)
+                    sock.sendto(forwardingBuffer, next_address)
 
         else:
             print "Error: Checksums do not match."
-            print "Received Checksum: " + givenChecksum
-            print "Computed Checksum: " + actualChecksum
+            print "Received Checksum: " + str(givenChecksum)
+            print "Computed Checksum: " + str(actualChecksum)
 
 if (len(sys.argv) != 3):
     print "Error: Incorrect arguments. Use format: Slave MasterHostname MasterPort#"
@@ -197,14 +205,15 @@ except:
     print "Error: unable to start thread"
 
 while (True):
-    inputRingID = raw_input("\nEnter Ring ID: ")
-    ringID = int(inputRingID)
-    message = raw_input("Message: ")
+    testing = 1
+    # inputRingID = raw_input("\nEnter Ring ID: ")
+    # ringID = int(inputRingID)
+    # message = raw_input("Message: ")
 
-    buffer = Buffer()
-    buffer.putByte(ringID)
-    buffer.putStr(message)
+    # buffer = Buffer()
+    # buffer.putByte(ringID)
+    # buffer.putStr(message)
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server_address = (hostname, port)
-    sent = sock.sendto(message, server_address)
+    # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # server_address = (hostname, port)
+    # sent = sock.sendto(message, server_address)
