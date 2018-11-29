@@ -154,7 +154,7 @@ public class Master {
      * @return
      */
     private Response processRequest(Request request) throws UnknownHostException {
-        Response response = new Response(request.getGID(), request.getMagicNumber(), this.nextRID, this.nextSlaveIP,
+        Response response = new Response(GID, request.getMagicNumber(), this.nextRID, this.nextSlaveIP,
                 Error.NONE);
         this.nextSlavePort = 10010 + (5 * request.getGID()) + this.nextRID;
         this.nextSlaveIP = request.getIpAddress();
@@ -232,8 +232,8 @@ public class Master {
         private int nextSlaveIP;
         private Error error;
 
-        public Response(byte GID, int magicNumber, byte assignedRID, String ipAddress, Error error) {
-            this.GID = GID;
+        public Response(int GID, int magicNumber, byte assignedRID, String ipAddress, Error error) {
+            this.GID = (byte)GID;
             this.magicNumber = magicNumber;
             this.assignedRID = assignedRID;
             this.nextSlaveIP = this.ipToInteger(ipAddress);
@@ -405,8 +405,8 @@ public class Master {
 
         public boolean verifyTTL() {
             this.TTL--;
-            if(this.TTL <= 0) {
-                System.out.println("TTL reached 0, message discarded.");
+            if(this.TTL <= 1) {
+                System.out.println("TTL reached 1, message discarded.");
                 return false;
             }
             this.checksum = this.computeChecksum();

@@ -4,7 +4,7 @@ import struct
 import thread
 
 class Buffer:
-    def __init__(self, data=[0] * 100):
+    def __init__(self, data=[]):
         self.position = 0
         self.buffer = bytearray(data)
 
