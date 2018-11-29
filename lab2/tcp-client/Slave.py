@@ -155,7 +155,7 @@ def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
                     newChecksum = messageResponse.computeChecksum()
                     next_address = (nextSlaveIP, port)
                     newResponse = messageResponse.toBuffer()
-                    sock.sendto(newResponse, port)
+                    sock.sendto(newResponse.buffer, port)
 
         else:
             print "Error: Checksums do not match."
