@@ -108,7 +108,6 @@ class MessageResponse:
 
     def computeChecksum(self):
         buffer = self.toBuffer()
-        #buffer.printBuffer()
         header_size = len(buffer.buffer) - 1
 
         checksum = 0
@@ -190,10 +189,8 @@ def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
             else:
                 messageResponse.ttl = messageResponse.ttl - 1
                 if messageResponse.ttl < 2:
-                    # discard
                     print "Warning: Message Discarded"
                 else:
-                    #print "Forwarding"
                     newChecksum = messageResponse.computeChecksum()
                     messageResponse.checkSum = newChecksum
                     dottedIP = socket.inet_ntoa(struct.pack('>L', nextSlaveIP))
@@ -247,10 +244,7 @@ while (True):
     message = raw_input("Message: ")
     sendingMessage = Message(resp, ringID, message)
     sendingMessage.checksum = sendingMessage.computeChecksum()
-    print "Sending Checksum: " + str(sendingMessage.checksum)
-    sendingBuffer = str(sendingMessage.toBuffer().buffer)
-    #sendingMessage.buffer.printBuffer()
-    
+    sendingBuffer = str(sendingMessage.toBuffer().buffer)    
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     dottedIP = socket.inet_ntoa(struct.pack('>L', resp.nextSlaveIP))
     next_address = (dottedIP, udpPort - 1)
