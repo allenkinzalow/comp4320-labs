@@ -79,6 +79,8 @@ public class Master {
                  * Receive input.
                  */
                 InputStream in = clntSock.getInputStream();
+                if(in.available() <= 0)
+                    continue;
                 receivedBytes = new byte[in.available()];
                 in.read(receivedBytes);
                 Request request = new Request(clntSock.getInetAddress().getHostAddress(), receivedBytes);
