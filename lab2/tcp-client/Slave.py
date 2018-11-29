@@ -239,13 +239,18 @@ except:
 
 while (True):
     testing = 1
-    inputRingID = raw_input("\nEnter Ring ID: ")
-    ringID = int(inputRingID)
-    message = raw_input("Message: ")
-    sendingMessage = Message(resp, ringID, message)
-    sendingMessage.checksum = sendingMessage.computeChecksum()
-    sendingBuffer = str(sendingMessage.toBuffer().buffer)    
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    dottedIP = socket.inet_ntoa(struct.pack('>L', resp.nextSlaveIP))
-    next_address = (dottedIP, udpPort - 1)
-    sent = sock.sendto(sendingBuffer, next_address)
+    try:
+        inputRingID = raw_input("Enter Ring ID: ")
+        ringID = int(inputRingID)
+        message = raw_input("Message: ")
+        sendingMessage = Message(resp, ringID, message)
+        sendingMessage.checksum = sendingMessage.computeChecksum()
+        sendingBuffer = str(sendingMessage.toBuffer().buffer)    
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        dottedIP = socket.inet_ntoa(struct.pack('>L', resp.nextSlaveIP))
+        next_address = (dottedIP, udpPort - 1)
+        sent = sock.sendto(sendingBuffer, next_address)
+    except ValueError as error:
+        print "Not a valid ring ID"
+
+
