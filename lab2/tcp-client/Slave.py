@@ -150,7 +150,6 @@ def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
         messageResponse = MessageResponse(data)
         retrievedChecksum = messageResponse.checkSum
         calculatedChecksum = messageResponse.computeChecksum()
-        print "TTL: " + str(messageResponse.ttl)
         if (retrievedChecksum == calculatedChecksum):
             if (messageResponse.ridDest == myRid):
                 print "Message: " + str(messageResponse.message)
@@ -160,9 +159,11 @@ def listenForMessages(threadName, delay, host, port, myRid, nextSlaveIP):
                     # discard
                     print "Message Discarded"
                 else:
+                    print "Forwarding"
                     newChecksum = messageResponse.computeChecksum()
+                    messageResponse.checkSum = newChecksum
                     dottedIP = socket.inet_ntoa(struct.pack('>L', nextSlaveIP))
-                    next_address = (dottedIP, port)
+                    next_address = (dottedIP, port - 1)
                     newResponse = messageResponse.toBuffer()
                     forwardingBuffer = str(newResponse.buffer)
                     sock.sendto(forwardingBuffer, next_address)
