@@ -146,10 +146,7 @@ class Message:
         self.magic = self.response.magic
         self.ttl = 255
         self.ridSrc = self.response.rid
-        self.checksum = 144
-        self.checksum = self.computeChecksum()
-        #print "Calculated Checksum: " + str(self.computeChecksum())
-        self.buffer = self.toBuffer()
+        self.checksum = 0
 
     def computeChecksum(self):
         buffer = self.toBuffer()
@@ -249,9 +246,10 @@ while (True):
     ringID = int(inputRingID)
     message = raw_input("Message: ")
     sendingMessage = Message(resp, ringID, message)
+    sendingMessage.checksum = sendingMessage.computeChecksum()
     print "Sending Checksum: " + str(sendingMessage.checksum)
-    sendingBuffer = str(sendingMessage.buffer)
-    sendingMessage.buffer.printBuffer()
+    sendingBuffer = str(sendingMessage.toBuffer().buffer)
+    #sendingMessage.buffer.printBuffer()
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     dottedIP = socket.inet_ntoa(struct.pack('>L', resp.nextSlaveIP))
